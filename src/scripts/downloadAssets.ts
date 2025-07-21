@@ -30,20 +30,38 @@ async function downloadFile(url: string, destFolder: string, filename: string) {
 
 async function run() {
   console.log('Fetching entities from backend...');
-  const countries = await fetchJSON(`${FOOTBALL_ENDPOINT}/country/fetchAll`) as WithId<Document>[];
+  const countries = await fetchJSON(`${FOOTBALL_ENDPOINT}/countries/fetchAll`) as WithId<Document>[];
+  const leagues = await fetchJSON(`${FOOTBALL_ENDPOINT}/leagues/fetchAll`) as WithId<Document>[];
+
   console.log(`Found ${countries.length} countries`);
+  console.log(`Found ${leagues.length} leagues`)
 
   const flagsFolder = path.resolve(__dirname, '../assets/logos/flags');
+  const leaguesFolder = path.resolve(__dirname, '../assets/logos/leagues');
 
   for (const country of countries) {
     if (!country.name || !country.flag) {
       console.error(`Properties missing for doc ${JSON.stringify(country)}`);
       continue;
     }
-    const name = country.name.toLowerCase();
+
+    const id = country.code.toLowerCase();
     const url = country.flag;
-    await downloadFile(url, flagsFolder, `${name}.svg`);
+    await downloadFile(url, flagsFolder, `${id}.svg`);
   }
+
+  for (const league of leagues) {
+    if (!league.name || !league.logo) {
+      console.error(`Properties missing for doc ${JSON.stringify(league)}`);
+      continue;
+    }
+
+    const id = league.id;
+    const url = league.logo;
+    await downloadFile(url, leaguesFolder, `${id}.png`);
+  }
+
+
 
 }
 
