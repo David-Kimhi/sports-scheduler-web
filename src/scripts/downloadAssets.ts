@@ -40,9 +40,9 @@ async function run() {
   console.log(`Found ${teams.length} teams`);
 
 
-  const flagsFolder = path.resolve(__dirname, '../assets/logos/flags');
-  const leaguesFolder = path.resolve(__dirname, '../assets/logos/leagues');
-  const teamsFolder = path.resolve(__dirname, '../assets/logos/teams');
+  const flagsFolder = path.resolve(__dirname, '../assets/logos/country');
+  const leaguesFolder = path.resolve(__dirname, '../assets/logos/league');
+  const teamsFolder = path.resolve(__dirname, '../assets/logos/team');
 
 
   for (const country of countries) {

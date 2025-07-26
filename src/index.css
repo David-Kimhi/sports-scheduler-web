@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@layer utilities {
+  .flag-texture {
+    background-size: 100% 100%; /* Always stretch to fill card */
+    background-position: center;
+    filter: contrast(1.05) brightness(1.05);
+    transform: perspective(800px) rotateY(3deg) skewX(-2deg); /* Subtler effect */
+    width: 100%;
+    height: 100%;
+  }
+}

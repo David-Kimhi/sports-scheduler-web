@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
    "download:assets": "ts-node ./src/scripts/downloadAssets.ts",
+   "dev-nd": "vite",
     "dev": "npm run download:assets && vite",
     "build": "npm run download:assets && tsc -b && vite build",
     "lint": "eslint .",
