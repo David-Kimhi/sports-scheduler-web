@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-   "download:assets": "ts-node ./src/scripts/downloadAssets.ts",
-   "dev-nd": "vite",
+    "download:assets": "ts-node ./src/scripts/downloadAssets.ts",
+    "dev-nd": "vite",
     "dev": "npm run download:assets && vite",
     "build": "npm run download:assets && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "mongodb": "^6.17.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
