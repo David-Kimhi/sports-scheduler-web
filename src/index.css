@@ -19,5 +19,37 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;     /* Firefox */
   }
+
+  @keyframes flowing-gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
+  }
   
+  .gradient-border {
+    position: relative;
+    border-radius: 9999px;
+    padding: 2px; /* border thickness */
+    background: linear-gradient(
+      90deg,
+      #93C5FD,
+      #60A5FA,
+      #2563EB,
+      #60A5FA,
+      #93C5FD
+    );
+    background-size: 200% 100%; /* Make the gradient longer than the element */
+    animation: flowing-gradient 3s linear infinite;
+  }
+  
+  .gradient-border button {
+    position: relative;
+    z-index: 1;
+    border-radius: 9999px;
+    background-color: #f3f4f6; /* gray-100 */
+    color: #374151; /* gray-700 */
+  }
 }

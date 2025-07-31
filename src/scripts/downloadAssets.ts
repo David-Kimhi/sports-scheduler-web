@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url';
 import { mkdirSync, writeFileSync } from 'fs';
 import { BACKEND_BASE, FOOTBALL_ENDPOINT } from '../config/index.ts';
 import path from 'path';
-import fetch from 'node-fetch';
 import { type WithId, type Document} from 'mongodb';
 
 const __filename = fileURLToPath(import.meta.url);

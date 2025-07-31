@@ -1,40 +1,115 @@
-import { format } from "date-fns";
 import { logos } from '../config';
 
-interface GameCardProps {
-  homeTeam: { name: string; logoId: string };
-  awayTeam: { name: string; logoId: string };
-  dateUTC: string;
+export function GameCard({
+    homeTeam,
+    awayTeam,
+    dateUTC,
+    isSelected,
+    onToggle,
+    leagueName,
+    round,
+  }: {
+    homeTeam: { name: string; logoId: string };
+    awayTeam: { name: string; logoId: string };
+    dateUTC: string;
+    isSelected: boolean;
+    onToggle: () => void;
+    leagueName?: string;
+    round?: string;
+  }) {
+  
+  const date = new Date(dateUTC);
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  const formatDateLabel = () => {
+    const isToday =
+      date.toDateString() === now.toDateString();
+    const isTomorrow =
+      date.toDateString() === tomorrow.toDateString();
+
+    if (isToday) return "Today";
+    if (isTomorrow) return "Tomorrow";
+
+    return date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formattedTime = date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return (
+    <div className="relative flex flex-col items-center w-full p-4 rounded-xl shadow-md hover:shadow-lg bg-white">
+        {/* Top-left checkbox */}
+        <input
+            type="checkbox"
+            className="absolute top-3 left-3 w-5 h-5 accent-blue-300 bg-blue-100 rounded cursor-pointer z-10"
+            checked={isSelected}
+            onChange={onToggle}
+        />   
+
+        {/* Top: League and Date */}
+        <div className="text-sm text-gray-600 mb-2 text-center">
+            {leagueName && (
+            <>
+                <span className="font-medium">{leagueName}</span>
+                <span className="mx-2">·</span>
+            </>
+            )}
+            <span>{formatDateLabel()}, {formattedTime}</span>
+        </div>
+
+        {/* Teams */}
+        <div className="flex items-center justify-between w-full px-4">
+            <TeamInfo name={homeTeam.name} logoId={homeTeam.logoId} />
+            <span className="text-base font-semibold text-gray-700 px-4">vs</span>
+            <TeamInfo name={awayTeam.name} logoId={awayTeam.logoId} />
+        </div>
+
+        {/* Round info */}
+        {round && (
+        <div className="mt-3 text-sm text-gray-500 text-center">
+            {round}
+        </div>
+        )}
+
+      {/* Optional bottom row (you can customize more here) */}
+      {/* <div className="mt-2 text-sm text-gray-500 text-center">
+        Second qualifying round · Leg 2 of 2<br />
+        Aggregate: 0 - 1
+      </div> */}
+    </div>
+  );
 }
 
-export function GameCard({ homeTeam, awayTeam, dateUTC }: GameCardProps) {
-    const date = new Date(dateUTC);
-    const formattedDate = format(date, "dd 'of' MMMM yyyy, HH:mm");
-  
-    const homeLogo = logos[`../assets/logos/team/${homeTeam.logoId}.svg`] || logos[`../assets/logos/team/${homeTeam.logoId}.png`];
-    const awayLogo = logos[`../assets/logos/team/${awayTeam.logoId}.svg`] || logos[`../assets/logos/team/${awayTeam.logoId}.png`];
+function TeamInfo({
+    name,
+    logoId,
+  }: {
+    name: string;
+    logoId: string;
+  }) {
+    const svg = `../assets/logos/team/${logoId}.svg`;
+    const png = `../assets/logos/team/${logoId}.png`;
+    const logo = logos[svg] || logos[png];
   
     return (
-      <div className="p-4 rounded-xl shadow-md bg-white flex flex-col items-center gap-2 w-full max-w-[320px]">
-        <div className="flex justify-between items-end w-full">
-          {/* Home Team */}
-          <div className="flex flex-col items-center flex-1">
-            {homeLogo && <img src={homeLogo} alt={homeTeam.name} className="w-8 h-8 mb-1"/>}
-            <span className="font-bold text-gray-800 text-sm truncate max-w-[100px]">{homeTeam.name}</span>
-          </div>
-  
-          {/* VS */}
-          <div className="mx-4 text-lg font-bold text-gray-500 self-center">vs</div>
-  
-          {/* Away Team */}
-          <div className="flex flex-col items-center flex-1">
-            {awayLogo && <img src={awayLogo} alt={awayTeam.name} className="w-8 h-8 mb-1" />}
-            <span className="font-bold text-gray-800 text-sm truncate max-w-[100px]">{awayTeam.name}</span>
-          </div>
-        </div>
-  
-        {/* Event date */}
-        <div className="text-gray-600 text-sm font-medium text-center">{formattedDate}</div>
+      <div className="flex flex-col items-center text-center w-1/3">
+        {logo && (
+          <img
+            src={logo}
+            alt={name}
+            className="w-12 h-12 object-contain mb-1"
+          />
+        )}
+        <span className="text-sm font-bold text-gray-700 truncate">{name}</span>
       </div>
     );
   }

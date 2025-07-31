@@ -8,60 +8,41 @@ export function Section({
   items,
   onSelect,
   selected = [],
-  activeFilters = [], // <-- NEW
-  onApplyFilters,
-  onClearFilters,
-  hasPendingFilters,
-  hasActiveFilters,
+  activeFilters = [],
 }: {
   title: string;
   items: Entity[];
   onSelect: (i: Entity) => void;
-  selected?: Entity[];        // pending filters
-  activeFilters?: Entity[];   // applied filters
-  onApplyFilters: () => void;
-  onClearFilters: () => void;
-  hasPendingFilters: boolean;
-  hasActiveFilters: boolean;
+  selected?: Entity[];
+  activeFilters?: Entity[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-
   const scrollByAmount = 300;
-  const scrollLeft = () => containerRef.current?.scrollBy({ left: -scrollByAmount, behavior: "smooth" });
-  const scrollRight = () => containerRef.current?.scrollBy({ left: scrollByAmount, behavior: "smooth" });
+
+  // hide section if has no cards
+  if (!items || items.length === 0) return null;
+
+
+  const scrollLeft = () =>
+    containerRef.current?.scrollBy({ left: -scrollByAmount, behavior: "smooth" });
+  const scrollRight = () =>
+    containerRef.current?.scrollBy({ left: scrollByAmount, behavior: "smooth" });
 
   const orderedItems = [...items].sort((a, b) => {
-    const aPinned = selected.some((f) => f.id === a.id) || activeFilters.some((f) => f.id === a.id);
-    const bPinned = selected.some((f) => f.id === b.id) || activeFilters.some((f) => f.id === b.id);
+    const aPinned =
+      selected.some((f) => f.id === a.id) || activeFilters.some((f) => f.id === a.id);
+    const bPinned =
+      selected.some((f) => f.id === b.id) || activeFilters.some((f) => f.id === b.id);
     if (aPinned === bPinned) return 0;
-    return aPinned ? -1 : 1;  // pinned (pending or active) always first
+    return aPinned ? -1 : 1;
   });
 
   return (
     <div className="mt-6 relative">
       <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-4 ml-6">
         <h3 className="ml-6 inline-flex items-center gap-1 text-gray-900 px-3 py-1 rounded-full text-sm font-medium shadow-sm">
-            {title} <FiChevronRight />
-          </h3>
-          {hasPendingFilters && (
-            <button
-              onClick={onApplyFilters}
-              className="text-blue-600 text-sm hover:underline"
-            >
-              Apply Filters
-            </button>
-          )}
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="text-blue-600 text-sm hover:underline"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-
+          {title} <FiChevronRight />
+        </h3>
         <div className="flex gap-2 z-20">
           <button
             onClick={scrollLeft}
@@ -82,12 +63,7 @@ export function Section({
         <div
           ref={containerRef}
           className="flex gap-4 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap"
-          style={{
-            scrollBehavior: "smooth",
-            overflowY: "visible",
-            minHeight: "100px",
-            maxHeight: "100px",
-          }}
+          style={{ scrollBehavior: "smooth", minHeight: "100px", maxHeight: "100px" }}
         >
           {orderedItems.map((item) => (
             <Card
@@ -106,4 +82,3 @@ export function Section({
     </div>
   );
 }
-
