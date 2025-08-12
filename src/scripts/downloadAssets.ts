@@ -30,8 +30,8 @@ async function downloadFile(url: string, destFolder: string, filename: string) {
 async function run() {
   console.log('Fetching entities from backend...');
   const countries = await fetchJSON(`${FOOTBALL_ENDPOINT}/countries/fetchAll`) as WithId<Document>[];
-  const leagues = await fetchJSON(`${FOOTBALL_ENDPOINT}/leagues/fetchAll`) as WithId<Document>[];
-  const teams = await fetchJSON(`${FOOTBALL_ENDPOINT}/teams/fetchAll`) as WithId<Document>[];
+  const leagues = await fetchJSON(`${FOOTBALL_ENDPOINT}/leagues/fetchLogos`) as WithId<Document>[];
+  const teams = await fetchJSON(`${FOOTBALL_ENDPOINT}/teams/fetchLogos`) as WithId<Document>[];
 
 
   console.log(`Found ${countries.length} countries`);
@@ -56,7 +56,7 @@ async function run() {
   }
 
   for (const league of leagues) {
-    if (!league.name || !league.logo) {
+    if (!league.id || !league.logo) {
       console.error(`Properties missing for doc ${JSON.stringify(league)}`);
       continue;
     }
@@ -68,7 +68,7 @@ async function run() {
 
 
   for (const team of teams) {
-    if (!team.name || !team.logo) {
+    if (!team.id || !team.logo) {
       console.error(`Properties missing for doc ${JSON.stringify(team)}`);
       continue;
     }

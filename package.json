@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "download:assets": "ts-node ./src/scripts/downloadAssets.ts",
+    "download:assets": "vite-node src/scripts/downloadAssets.ts",
     "dev-nd": "vite",
     "dev": "npm run download:assets && vite",
     "build": "npm run download:assets && tsc -b && vite build",
@@ -26,7 +26,6 @@
     "@tailwindcss/vite": "^4.1.10",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "@types/react-router-dom": "^5.3.3",
     "@types/tinycolor2": "^1.4.6",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
@@ -38,6 +37,7 @@
     "tailwindcss": "^4.1.10",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vite-node": "^3.2.4"
   }
 }

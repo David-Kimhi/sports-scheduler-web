@@ -1,2 +1,2 @@
 export * from './backend.config.ts';
-export * from './constants.config'
+export * from './constants.config.ts';
