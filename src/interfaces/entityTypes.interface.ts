@@ -21,6 +21,7 @@ export type GameEntity = {
     league: Entity[];
     team: Entity[];
     game: (Entity | GameEntity)[];
+    selectedTeamIds?: (string | number)[];
   };
   
   

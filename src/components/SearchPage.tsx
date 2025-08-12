@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 import { BACKEND_BASE, FOOTBALL_ENDPOINT } from "../config";
 import {
@@ -17,6 +17,8 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Entity[]>([]); // Active filters
   const [pendingFilters, setPendingFilters] = useState<Entity[]>([]); // Not yet applied
+  const [isSearchingGames, setIsSearchingGames] = useState(false);
+
   const [data, setData] = useState<EntityData>({
     country: [],
     league: [],
@@ -24,19 +26,45 @@ export default function SearchPage() {
     game: [],
   });
 
+  const gameSectionRef = useRef<HTMLDivElement>(null);
+
+  // Put selected (pending + active) first, then the rest. Dedup by type:id.
+  const dedupeById = <T extends Entity>(arr: T[]) => {
+    const seen = new Set<string>();
+    return arr.filter((x) => {
+      const key = `${x.type}:${String(x.id)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  const pinSelected = (type: Entity["type"], items: Entity[]) => {
+    const pending = pendingFilters.filter((f) => f.type === type);
+    const active  = filters.filter((f) => f.type === type);
+    return dedupeById<Entity>([...pending, ...active, ...items]);
+  };
+
+
   const fetchResults = (opts?: { games?: boolean; ignoreFilters?: boolean; useFilters?: Entity[]; useQuery?: string }) => {
     const params = new URLSearchParams();
     const q = opts?.useQuery ?? query;
-    const activeFilters = opts?.useFilters ?? filters;
   
-    if (q && !opts?.games) {
-      params.append("word", q);
-    }
+    // ✅ Effective filters = exactly what caller asked to use
+    const effectiveFilters = opts?.ignoreFilters ? [] : (opts?.useFilters ?? filters);
+  
+    if (q && !opts?.games) params.append("word", q);
     if (!opts?.ignoreFilters) {
-      activeFilters.forEach((f) => {
+      effectiveFilters.forEach((f) => {
         if (f.id != null) params.append(f.type, String(f.id));
       });
     }
+  
+    // ✅ teamIds come from effective filters (not pending)
+    const teamIds = effectiveFilters
+      .filter((f) => f.type === "team")
+      .map((f) => String(f.id));
+  
     if (opts?.games) {
       params.append("games", "true");
       params.append("limit", "100");
@@ -45,51 +73,50 @@ export default function SearchPage() {
     fetch(`${BACKEND_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
-        // Build base result sets from API
         const resultData: EntityData = opts?.games
-      ? {
-          country: [],
-          league: [],
-          team: [],
-          game: (data.fixtures as GameApi[]).map((g) => ({
-            id: g.id,
-            name: `${g.home} vs ${g.away}`,
-            type: "game",
-            date: typeof g.date === "string" ? g.date : g.date.toISOString(),
-            homeTeamId: Number(g.home_id),
-            homeTeamName: g.home,
-            awayTeamId: Number(g.away_id),
-            awayTeamName: g.away,
-            round: g.round,
-            league: g.league,
-          })),
-        }
-      : {
-          country: (data.countries as CountryApi[]).map((c) => ({
-            id: c.code,
-            name: c.name,
-            type: "country" as const,
-          })),
-          league: (data.leagues as LeagueApi[]).map((l) => ({
-            id: l.id,
-            name: l.name,
-            type: "league" as const,
-            description: `A ${l.type} in ${l.country}`,
-          })),
-          team: (data.teams as TeamApi[]).map((t) => ({
-            id: t.id,
-            name: t.name,
-            type: "team" as const,
-            description: `A Team in ${t.country}`,
-          })),
-          game: [],
-        };
-
+          ? {
+              country: [],
+              league: [],
+              team: [],
+              game: (data.fixtures as GameApi[]).map((g) => ({
+                id: g.id,
+                name: `${g.home} vs ${g.away}`,
+                type: "game",
+                date: typeof g.date === "string" ? g.date : g.date.toISOString(),
+                homeTeamId: Number(g.home_id),
+                homeTeamName: g.home,
+                awayTeamId: Number(g.away_id),
+                awayTeamName: g.away,
+                round: g.round,
+                league: g.league,
+                venueCity: g.venueCity,
+                venueName: g.venueName,
+                selectedTeamIds: teamIds,
+              })),
+            }
+          : {
+              country: (data.countries as CountryApi[]).map((c) => ({
+                id: c.code,
+                name: c.name,
+                type: "country" as const,
+              })),
+              league: (data.leagues as LeagueApi[]).map((l) => ({
+                id: l.id,
+                name: l.name,
+                type: "league" as const,
+                description: `A ${l.type} in ${l.country}`,
+              })),
+              team: (data.teams as TeamApi[]).map((t) => ({
+                id: t.id,
+                name: t.name,
+                type: "team" as const,
+                description: `A Team in ${t.country}`,
+              })),
+              game: [],
+            };
   
-        // Merge selected + pending filters so they are ALWAYS present
-        // Merge selected + pending filters so they are ALWAYS present
-        const allFilters = [...filters, ...pendingFilters];
-        allFilters.forEach((f) => {
+        // ✅ Only prepend the *effective* filters (not pending unless caller says so)
+        effectiveFilters.forEach((f) => {
           switch (f.type) {
             case "country":
               if (!resultData.country.find((i) => i.id === f.id)) {
@@ -113,16 +140,17 @@ export default function SearchPage() {
               break;
           }
         });
-
   
-        setData(prev => ({
-            ...resultData,
-            game: opts?.games ? resultData.game : prev.game
-          }));
-        })
-
+        setData((prev) => ({
+          ...resultData,
+          game: opts?.games ? resultData.game : prev.game,
+        }));
+  
+        if (opts?.games) setIsSearchingGames(false);
+      })
       .catch((err) => console.error("Fetch error:", err));
   };
+  
   
 
   // Fetch results on first load
@@ -142,6 +170,7 @@ export default function SearchPage() {
     });
     setFilters(merged);
     setPendingFilters([]);
+    setQuery('');
   
     // 🔥 Fetch non-game data using the new active filters
     fetchResults({ useFilters: merged });
@@ -155,42 +184,74 @@ export default function SearchPage() {
   };
 
   const togglePendingFilter = (item: Entity) => {
-    setPendingFilters((prev) =>
-      prev.find((f) => f.id === item.id)
-        ? prev.filter((f) => f.id !== item.id)
-        : [...prev, item]
-    );
-    
+    // Build next states based on *current* values
+    const inPending = pendingFilters.some((f) => f.id === item.id);
+    const inActive  = filters.some((f) => f.id === item.id);
+    const existsAnywhere = inPending || inActive;
+  
+    let nextPending = pendingFilters;
+    let nextActive = filters;
+  
+    if (existsAnywhere) {
+      // Remove from BOTH lists
+      nextPending = pendingFilters.filter((f) => f.id !== item.id);
+      nextActive  = filters.filter((f) => f.id !== item.id);
+    } else {
+      // Add to pending (not active yet)
+      nextPending = [...pendingFilters, item];
+      nextActive  = filters;
+    }
+  
+    // Apply state updates
+    setPendingFilters(nextPending);
+    setFilters(nextActive);
+  
+    // 🔄 Refresh non-game results immediately with the *next active* filters only
+    // (so removal actually reflects in results)
+    fetchResults({ useFilters: nextActive, useQuery: query });
   };
+  
+  
   
 
   const removePill = (item: Entity) => {
-    // Remove from both filters and pendingFilters
-    setPendingFilters((prev) => prev.filter((f) => f.id !== item.id));
-    setFilters((prev) => {
-      const updated = prev.filter((f) => f.id !== item.id);
-      fetchResults({ useFilters: updated });
-      return updated;
-    });
+    const nextPending = pendingFilters.filter((f) => f.id !== item.id);
+    const nextActive  = filters.filter((f) => f.id !== item.id);
+  
+    setPendingFilters(nextPending);
+    setFilters(nextActive);
+  
+    fetchResults({ useFilters: nextActive, useQuery: query });
   };
+  
 
   const searchGames = () => {
-    // Merge applied + pending filters
     const merged = [...filters];
     pendingFilters.forEach((pf) => {
       if (!merged.find((f) => f.id === pf.id)) merged.push(pf);
     });
   
-    // Trigger query immediately with merged filters (ignoring query text)
-    fetchResults({ games: true, useFilters: merged, useQuery: "" });
+    // Clear current games and show loader
+    setData(prev => ({ ...prev, game: [] }));
+    setIsSearchingGames(true);
+  
+    fetchResults({
+      games: true,
+      useFilters: merged,
+      useQuery: "",
+    });
+  
+    gameSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+  
   
 
   const sections = [
-    { title: "Countries", type: "country" as const, items: data.country },
-    { title: "Leagues", type: "league" as const, items: data.league },
-    { title: "Teams", type: "team" as const, items: data.team },
+    { title: "Countries", type: "country" as const, items: pinSelected("country", data.country) },
+    { title: "Leagues",  type: "league"  as const, items: pinSelected("league",  data.league)  },
+    { title: "Teams",    type: "team"    as const, items: pinSelected("team",    data.team)    },
   ];
+  
 
   return (
     <div className="w-11/12 sm:w-2/3 mx-auto">
@@ -205,7 +266,7 @@ export default function SearchPage() {
             {[...filters, ...pendingFilters].map((f) => (
               <span
                 key={`${f.type}-${f.id}`}
-                className="flex items-center bg-blue-100 h-7 text-blue-700 px-3 py-0.5 rounded-full text-xs mr-2 mb-1"
+                className="flex items-center bg-selected-card text-accent-2 px-3 py-0.5 rounded-full text-xs mr-2 mb-1"
               >
                 {f.name}
                 <FiX className="ml-2 cursor-pointer" onClick={() => removePill(f)} />
@@ -228,7 +289,7 @@ export default function SearchPage() {
         <div
           className={`rounded-full p-[2px] ${
             filters.length === 0 && pendingFilters.length === 0
-              ? "border border-gray-300 opacity-50"
+              ? "border border-gray-300 opacity-70"
               : "gradient-border"
           }`}
         >
@@ -238,8 +299,8 @@ export default function SearchPage() {
               searchGames();
             }}
             disabled={filters.length === 0 && pendingFilters.length === 0}
-            className={`px-6 py-2 w-full h-full rounded-full bg-white text-gray-700 
-              active:bg-white focus:bg-blue-100 transition-colors duration-100 outline-none
+            className={`px-6 py-2 w-full h-full rounded-full bg-primary text-primary
+              active:bg-primary focus:bg-blue-100 transition-colors duration-100 outline-none
               hover:bg-blue-100
               ${filters.length === 0 && pendingFilters.length === 0 ? "cursor-not-allowed" : ""}`}
           >
@@ -273,17 +334,18 @@ export default function SearchPage() {
       {/* Sections */}
       {sections.map(({ title, type, items }) => (
         <Section
-          key={type}
-          title={title}
-          items={items}
-          onSelect={togglePendingFilter}
-          selected={pendingFilters.filter((f) => f.type === type)}
-          activeFilters={filters.filter((f) => f.type === type)}
-        />
+        key={type}
+        title={title}
+        items={items} 
+        onSelect={togglePendingFilter}
+        selected={pendingFilters.filter((f) => f.type === type)}
+        activeFilters={filters.filter((f) => f.type === type)}
+      />
+      
       ))}
 
-      <div className="w-full mt-8">
-        <GameSection items={data.game} />
+      <div ref={gameSectionRef} className="pt-8">
+        <GameSection items={data.game} isSearchingGames={isSearchingGames} />
       </div>
     </div>
   );

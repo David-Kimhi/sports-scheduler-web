@@ -29,6 +29,8 @@ interface GameApi {
     away_id: number;
     league: string;
     round: string;
+    venueName: string;
+    venueCity: string;
 }
 
 interface Entity {
@@ -37,7 +39,6 @@ interface Entity {
     type: "country" | "league" | "team" | "game";
     description?: string;
 
-  
     // Game-specific fields (only used when type === "game")
     date?: string;
     league?: string;
@@ -45,7 +46,10 @@ interface Entity {
     homeTeamName?: string;
     awayTeamId?: string | number;
     awayTeamName?: string;
+    selectedTeamIds?: string[] | number[];
     round?: string;
+    venueName?: string;
+    venueCity?: string;
   }
   
 

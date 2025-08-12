@@ -1,0 +1,5 @@
+export const CREAM = "#F2F4CB"
+export const SATIN_GOLD = "#b7990d"
+export const LICORICE = "#110B11"
+export const CAMBRIDGE_BLUE = "#8CADA7"
+export const CELADON = "A5D0A8"

@@ -1,55 +1,117 @@
 @import "tailwindcss";
 
+/* === Global Color Variables === */
+:root {
+  /* Primary brand colors */
+  --color-primary: #DFE0E2;
+  --color-secondary: #23B5D3;
+  --color-accent: #A2AEBB;
+  --color-accent-2: #91BDCA;
+  --color-third: #75ABBC;
+  --color-card: #C9CBCF;
+  --color-game-card: #E3EEF2;
+
+  /* Shadows */
+  --shadow-primary: #866F09;
+  --shadow-accent: #485a56;
+
+  /* Text & Borders */
+  --text-primary: black;
+  --text-accent-2: #071013;
+  --text-accent: var(--color-secondary);
+  --border-primary: var(--text-primary);
+
+  /* Gradient colors */
+  --gradient-light: #61CFE5;
+  --gradient-mid: var(--color-secondary);
+  --gradient-dark: #1A889E;
+
+  /* Neutral UI colors */
+  --gray-100: #f3f4f6;
+  --gray-700: #374151;
+}
+
 @layer utilities {
+  /* Flag texture styling */
   .flag-texture {
-    background-size: 100% 100%; /* Always stretch to fill card */
+    background-size: 100% 100%;
     background-position: center;
     filter: contrast(1.05) brightness(1.05);
-    transform: perspective(800px) rotateY(3deg) skewX(-2deg); /* Subtler effect */
+    transform: perspective(800px) rotateY(3deg) skewX(-2deg);
     width: 100%;
     height: 100%;
   }
 
-  /* Add this to your global stylesheet (e.g., index.css) */
-    .no-scrollbar::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari */
+  /* Hide scrollbars visually */
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
-  
-  .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;     /* Firefox */
+  .no-scrollbar,
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  @keyframes flowing-gradient {
-    0% {
-      background-position: 0% 50%;
-    }
-    100% {
-      background-position: 200% 50%;
-    }
+  /* 🎨 Backgrounds */
+  .bg-primary { background-color: var(--color-primary) }
+  .bg-secondary { background-color: var(--color-secondary); }
+  .bg-accent { background-color: var(--color-accent); }
+  .bg-accent-2 { background-color: var(--color-accent-2); }
+  .bg-third { background-color: var(--color-third); }
+  .bg-card { background-color: var(--color-card); }
+  .bg-selected-card { background-color: var(--color-secondary); }
+  .bg-game-card { background-color: var(--color-game-card); }
+  .accent-2 {accent-color: var(--color-accent-2);}
+
+
+  /* Shadows */
+  .shadow-primary {
+    box-shadow:
+      0 4px 6px -1px var(--shadow-primary),
+      0 2px 4px -1px var(--shadow-primary);
   }
-  
+  .shadow-accent {
+    box-shadow:
+      0 4px 6px -1px var(--shadow-accent),
+      0 2px 4px -1px var(--shadow-accent);
+  }
+
+  /* Text & Border */
+  .text-primary { color: var(--text-primary); }
+  .text-accent { color: var(--text-accent); }
+  .text-accent-2 {color: var(--text-accent-2)}
+  .border-primary { border-color: var(--border-primary); }
+
+  /* Gradient animation */
+  @keyframes flowing-gradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  /* Gradient border */
   .gradient-border {
     position: relative;
     border-radius: 9999px;
-    padding: 2px; /* border thickness */
+    padding: 2px;
     background: linear-gradient(
       90deg,
-      #93C5FD,
-      #60A5FA,
-      #2563EB,
-      #60A5FA,
-      #93C5FD
+      var(--gradient-light),
+      var(--gradient-mid),
+      var(--gradient-dark),
+      var(--gradient-mid),
+      var(--gradient-light)
     );
-    background-size: 200% 100%; /* Make the gradient longer than the element */
+    background-size: 200% 100%;
     animation: flowing-gradient 3s linear infinite;
   }
-  
+
+  /* Inner button inside gradient border */
   .gradient-border button {
     position: relative;
     z-index: 1;
     border-radius: 9999px;
-    background-color: #f3f4f6; /* gray-100 */
-    color: #374151; /* gray-700 */
+    background-color: var(--gray-100);
+    color: var(--gray-700);
   }
 }

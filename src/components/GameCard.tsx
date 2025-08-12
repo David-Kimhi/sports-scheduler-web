@@ -46,11 +46,11 @@ export function GameCard({
   });
 
   return (
-    <div className="relative flex flex-col items-center w-full p-4 rounded-xl shadow-md hover:shadow-lg bg-white">
+    <div className="relative flex flex-col items-center w-full p-4 rounded-xl shadow-md hover:shadow-lg bg-game-card">
         {/* Top-left checkbox */}
         <input
             type="checkbox"
-            className="absolute top-3 left-3 w-5 h-5 accent-blue-300 bg-blue-100 rounded cursor-pointer z-10"
+            className="absolute top-3 left-3 w-5 h-5 accent-2 bg-accent-2 rounded cursor-pointer z-10"
             checked={isSelected}
             onChange={onToggle}
         />   

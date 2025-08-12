@@ -38,32 +38,31 @@ export function Section({
   });
 
   return (
-    <div className="mt-6 relative">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="ml-6 inline-flex items-center gap-1 text-gray-900 px-3 py-1 rounded-full text-sm font-medium shadow-sm">
+    <div className="mt-3 relative">
+      <div className="flex justify-between items-center">
+        <h3 className="ml-6 inline-flex items-center gap-1 text-gray-900 bg-accent px-3 py-1 rounded-full text-sm font-medium shadow-md shadow-accent">
           {title} <FiChevronRight />
         </h3>
         <div className="flex gap-2 z-20">
           <button
             onClick={scrollLeft}
-            className="bg-gray-50 shadow rounded-full p-2 hover:bg-gray-100"
+            className="bg-accent shadow shadow-accent rounded-full p-2 hover:bg-gray-100"
           >
             <FiChevronLeft size={20} />
           </button>
           <button
             onClick={scrollRight}
-            className="bg-gray-50 shadow rounded-full p-2 hover:bg-gray-100"
+            className="bg-accent shadow shadow-accent rounded-full p-2 hover:bg-gray-100"
           >
             <FiChevronRight size={20} />
           </button>
         </div>
       </div>
 
-      <div className="py-2">
+      <div className="py-2 overflow-visible">
         <div
           ref={containerRef}
-          className="flex gap-4 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap"
-          style={{ scrollBehavior: "smooth", minHeight: "100px", maxHeight: "100px" }}
+          className="flex gap-4 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap min-h-[100px]"
         >
           {orderedItems.map((item) => (
             <Card
@@ -77,7 +76,11 @@ export function Section({
             />
           ))}
         </div>
-        <div className="pointer-events-none absolute top-0 right-0 h-full w-16 rounded-r-2xl bg-gradient-to-l from-white to-transparent z-10"></div>
+        <div className="pointer-events-none absolute top-0 right-0 h-full w-16 rounded-r-2xl z-10"
+            style={{
+              background: `linear-gradient(to left, var(--color-primary, #F2F4CB) 0%, transparent 100%)`
+            }}>
+        </div>
       </div>
     </div>
   );
