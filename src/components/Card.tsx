@@ -3,7 +3,6 @@ import { measureTextPx, getFontString, getLetterSpacing } from "../utils/textMea
 import type { Entity } from "../interfaces/api.interface";
 import { logos } from "../config";
 
-
 interface CardProps {
   item: Entity;
   onSelect: (i: Entity) => void;

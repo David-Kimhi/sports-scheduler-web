@@ -7,18 +7,23 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 
-# NEW: allow skipping download step
-ARG SKIP_ASSET_DOWNLOAD=1
-ENV SKIP_ASSET_DOWNLOAD=$SKIP_ASSET_DOWNLOAD
+# Allow skipping download step
+ARG SKIP_ASSET_DOWNLOAD=0
 
-# Only download if not skipped
+ARG BACKEND_BASE
+ARG FOOTBALL_ENDPOINT=/football
+ENV BACKEND_BASE=$BACKEND_BASE
+ENV FOOTBALL_ENDPOINT=$FOOTBALL_ENDPOINT
+
+# run build in the same order as your package.json, but allow skipping the download step
 RUN if [ "$SKIP_ASSET_DOWNLOAD" = "1" ]; then \
-        echo "Skipping download:assets"; \
+      echo "Skipping download:assets for bootstrap"; \
     else \
-        npm run download:assets; \
-    fi
+      npm run download:assets; \
+    fi \
+ && tsc -b \
+ && vite build
 
-RUN tsc -b && vite build
 
 # 2) Serve with Caddy
 FROM caddy:2.8-alpine

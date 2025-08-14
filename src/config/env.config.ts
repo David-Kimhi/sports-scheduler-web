@@ -1,0 +1,14 @@
+// Import all logos (SVG + PNG) relative to this file
+export const logos: Record<string, string> = import.meta.glob(
+    "../assets/logos/**/*.{svg,png}",
+    { eager: true, import: "default" }
+  );
+
+export const BACKEND_BASE =
+  (typeof process !== 'undefined' && process.env.BACKEND_BASE) ||
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE) ||
+  'http://localhost:3000';
+
+export const FOOTBALL_ENDPOINT =
+  (typeof process !== 'undefined' && process.env.FOOTBALL_ENDPOINT) ||
+  '/football';
