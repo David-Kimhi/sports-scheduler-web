@@ -1,20 +1,17 @@
 {$DOMAIN} {
-	# Serve the built React app
-	root * /usr/share/caddy
-	encode gzip zstd
+  root * /usr/share/caddy
+  encode gzip zstd
 
-	# SPA fallback
-	try_files {path} /index.html
+  # Proxy /api/* as-is (keep the /api prefix)
+  @api path /api/*
+  reverse_proxy @api api:3000
 
-	# API: /api -> backend container
-	handle_path /api* {
-		reverse_proxy api:3000
-	}
+  # SPA fallback for everything else
+  try_files {path} /index.html
 
-	# Security-ish headers (optional)
-	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "no-referrer-when-downgrade"
-	}
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer-when-downgrade"
+  }
 }
