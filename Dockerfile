@@ -21,8 +21,8 @@ RUN if [ "$SKIP_ASSET_DOWNLOAD" = "1" ]; then \
     else \
       npm run download:assets; \
     fi \
- && tsc -b \
- && vite build
+ && npx tsc -b \
+ && npx vite build
 
 
 # 2) Serve with Caddy
