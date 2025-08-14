@@ -7,27 +7,25 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 
-# Allow skipping download step
+ENV PATH=/app/node_modules/.bin:$PATH
 ARG SKIP_ASSET_DOWNLOAD=0
-
 ARG BACKEND_BASE
 ARG FOOTBALL_ENDPOINT=/football
 ENV BACKEND_BASE=$BACKEND_BASE
 ENV FOOTBALL_ENDPOINT=$FOOTBALL_ENDPOINT
 
-# run build in the same order as your package.json, but allow skipping the download step
+# optional: show tool versions
+RUN node -v && npm -v && npx tsc -v
+
+# 1) (maybe) download assets
 RUN if [ "$SKIP_ASSET_DOWNLOAD" = "1" ]; then \
       echo "Skipping download:assets for bootstrap"; \
     else \
       npm run download:assets; \
-    fi \
- && npx tsc -b \
- && npx vite build
+    fi
 
+# 2) Type-check / compile TS
+RUN npx tsc -b --pretty false
 
-# 2) Serve with Caddy
-FROM caddy:2.8-alpine
-# Static files go to Caddy's web root:
-COPY --from=builder /app/dist /usr/share/caddy
-# Caddy config (added next):
-COPY Caddyfile /etc/caddy/Caddyfile
+# 3) Build the app
+RUN npx vite build --debug
