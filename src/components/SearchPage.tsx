@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
-import { BACKEND_BASE, FOOTBALL_ENDPOINT } from "../config";
+import { API_BASE, FOOTBALL_ENDPOINT } from "../config";
 import {
   type Entity,
   type GameApi,
@@ -70,7 +70,7 @@ export default function SearchPage() {
       params.append("limit", "100");
     }
   
-    fetch(`${BACKEND_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`)
+    fetch(`${API_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         const resultData: EntityData = opts?.games
