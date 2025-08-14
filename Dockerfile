@@ -8,14 +8,12 @@ RUN npm ci
 COPY . .
 
 ENV PATH=/app/node_modules/.bin:$PATH
+
 ARG SKIP_ASSET_DOWNLOAD=0
 ARG BACKEND_BASE
 ARG FOOTBALL_ENDPOINT=/football
 ENV BACKEND_BASE=$BACKEND_BASE
 ENV FOOTBALL_ENDPOINT=$FOOTBALL_ENDPOINT
-
-# optional: show tool versions
-RUN node -v && npm -v && npx tsc -v
 
 # 1) (maybe) download assets
 RUN if [ "$SKIP_ASSET_DOWNLOAD" = "1" ]; then \
@@ -24,8 +22,8 @@ RUN if [ "$SKIP_ASSET_DOWNLOAD" = "1" ]; then \
       npm run download:assets; \
     fi
 
-# 2) Type-check / compile TS
-RUN npx tsc -b --pretty false
+# 2) TypeScript (normal project mode, not -b)
+RUN npx tsc -p tsconfig.json --pretty false
 
-# 3) Build the app
-RUN npx vite build --debug
+# 3) Build Vite
+RUN npx vite build
