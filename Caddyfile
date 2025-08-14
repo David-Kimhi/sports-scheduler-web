@@ -1,13 +1,22 @@
+{
+  debug
+}
+
 {$DOMAIN} {
-  root * /usr/share/caddy
   encode gzip zstd
 
-  # Proxy /api/* as-is (keep the /api prefix)
+  # 1) API goes to backend, keep /api/*
   @api path /api/*
-  reverse_proxy @api api:3000
+  handle @api {
+    reverse_proxy api:3000
+  }
 
-  # SPA fallback for everything else
-  try_files {path} /index.html
+  # 2) Everything else = SPA
+  handle {
+    root * /usr/share/caddy
+    try_files {path} /index.html
+    file_server
+  }
 
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
