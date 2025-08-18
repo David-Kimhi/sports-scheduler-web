@@ -5,4 +5,5 @@ export const logos: Record<string, string> = import.meta.glob(
   );
 
 
-  export const BACKEND_BASE = process.env.BACKEND_BASE ?? 'http://localhost:3000/api';
+export const BACKEND_BASE =
+  import.meta.env.VITE_API_BASE ?? 'http://localhost:3000/api';

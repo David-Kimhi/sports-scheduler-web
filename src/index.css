@@ -4,7 +4,7 @@
 :root {
   /* Primary brand colors */
   --color-primary: #DFE0E2;
-  --color-secondary: #23B5D3;
+  --color-secondary: #b2d3e6;
   --color-accent: #A2AEBB;
   --color-accent-2: #91BDCA;
   --color-third: #75ABBC;
@@ -89,11 +89,11 @@
     100% { background-position: 200% 50%; }
   }
 
-  /* Gradient border */
   .gradient-border {
+    display: inline-block;          /* don't become full-width */
     position: relative;
     border-radius: 9999px;
-    padding: 2px;
+    padding: 2px;                   /* thickness of the border */
     background: linear-gradient(
       90deg,
       var(--gradient-light),
@@ -104,6 +104,9 @@
     );
     background-size: 200% 100%;
     animation: flowing-gradient 3s linear infinite;
+  }
+  @keyframes flowing-gradient {
+    to { background-position: 200% 0; }
   }
 
   /* Inner button inside gradient border */

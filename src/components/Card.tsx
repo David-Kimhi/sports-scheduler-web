@@ -20,8 +20,8 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
 
   // layout constants
   const baseWidth = 200;                 // fixed width when not hovering
-  const logoPx = 32;                     // w-8 => ~32px (adjust to your sizes)
-  const gapPx = 12;                      // gap-3 => ~12px. If gap-4 => 16px
+  const logoPx = 32;                     // w-8 => ~32px 
+  const gapPx = 18;                      // gap-3 => ~12px. If gap-4 => 16px
 
   const [hoverWidth, setHoverWidth] = useState(baseWidth);
 
@@ -72,13 +72,13 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
   }, [item.name, item.description]);
 
   const cardBase =
-    "p-3 rounded-xl shadow-md hover:shadow-lg cursor-pointer flex gap-3 transition-all duration-300 hover:-translate-y-1 flex-none shrink-0";
-  const bg = isSelected ? " bg-selected-card " : " bg-card ";
+    "p-2 rounded-xl shadow-md hover:shadow-lg cursor-pointer flex gap-3 transition-all duration-300 hover:-translate-y-1 flex-none shrink-0";
+  const bg = isSelected ? " bg-selected-card " : " bg-white ";
 
   return (
     <div
       onClick={() => item.type !== "game" && onSelect(item)}
-      className={`group ${cardBase}${bg} flex-none shrink-0 min-h-[64px]`}
+      className={`group ${cardBase}${bg} flex-none shrink-0 min-h-[24px]`}
       style={{ width: baseWidth }}
       onMouseEnter={(e) => { e.currentTarget.style.width = `${hoverWidth}px`; }}
       onMouseLeave={(e) => { e.currentTarget.style.width = `${baseWidth}px`; }}

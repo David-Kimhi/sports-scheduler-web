@@ -46,7 +46,7 @@ export function GameCard({
   });
 
   return (
-    <div className="relative flex flex-col items-center w-full p-4 rounded-xl shadow-md hover:shadow-lg bg-game-card">
+    <div className="relative flex flex-col items-center w-full p-4 rounded-xl shadow-md hover:shadow-lg bg-white">
         {/* Top-left checkbox */}
         <input
             type="checkbox"

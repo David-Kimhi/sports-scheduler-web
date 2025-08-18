@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState, useMemo } from "react";
+import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+
 import { GameCard } from "./GameCard";
 import { type Entity } from "../interfaces/api.interface";
 import { FiChevronRight } from "react-icons/fi";
@@ -35,13 +36,16 @@ const handleGoogle = async (events: CalendarEvent[]) => {
   console.log("Add to Google Calendar", events);
 };
 
-export function GameSection({
-  items,
-  isSearchingGames,
-}: {
+
+export type GameSectionHandle = {
+  openExport: () => void;
+};
+
+export const GameSection = forwardRef<GameSectionHandle, {
   items: Entity[];
   isSearchingGames: boolean;
-}) {
+}>(
+  function GameSection({ items, isSearchingGames}, ref) {
   const filterOptions = ["home", "away", "both"] as const;
   type FilterType = typeof filterOptions[number];
 
@@ -52,6 +56,12 @@ export function GameSection({
   const [selectedGames, setSelectedGames] = useState<Set<string | number>>(new Set());
   const [teamFilter, setTeamFilter] = useState<FilterType>("both");
   const [exportOpen, setExportOpen] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    openExport: () => setExportOpen(true),
+  }));
+
+
 
   const selectedTeamIds = items[0]?.selectedTeamIds ?? [];
   const hasTeamFilter = selectedTeamIds.length > 0;
@@ -100,13 +110,11 @@ export function GameSection({
   // --- Layout refs & vars
   const sectionRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const [footerH, setFooterH] = useState(56); // default guess; actual measured below
 
   useLayoutEffect(() => {
     const setVars = () => {
       const header = headerRef.current?.getBoundingClientRect().height ?? 0;
       const footer = document.getElementById("export-bar")?.getBoundingClientRect().height ?? 0;
-      setFooterH(footer);
       if (sectionRef.current) {
         sectionRef.current.style.setProperty("--header-h", `${header}px`);
         sectionRef.current.style.setProperty("--footer-h", `${footer}px`);
@@ -118,136 +126,108 @@ export function GameSection({
   }, []);
 
   return (
-    <div
-      ref={sectionRef}
-      className="relative w-full h-screen overflow-hidden flex flex-col"
-      // optional: ensure your bg comes through everywhere
-    >
-      {/* Sticky Header */}
-      <div
-        ref={headerRef}
-        className="sticky top-0 z-20 bg-primary pt-4 pb-3"
-      >
-        <div className="flex justify-between items-center">
-          {/* Left: Title + Select All */}
-          <div className="flex items-center gap-3">
-            <h3 className="ml-6 inline-flex items-center gap-1 text-primary bg-third px-3 py-1 rounded-full text-sm font-medium shadow-lg shadow-accent">
-              Events <FiChevronRight />
-            </h3>
-            <button
-              onClick={selectAll}
-              className="text-accent underline hover:text-blue-900 text-sm"
-            >
-              {selectedGames.size === filteredGames.length ? "Unselect All" : "Select All"}
-            </button>
-          </div>
+    <div id="games-section" ref={sectionRef} className="h-screen snap-start">
+      <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto]">
 
-          {/* Right: Filters */}
-          <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm">
-            {filterOptions.map((type) => (
-              <button
-                key={type}
-                onClick={() => setTeamFilter(type)}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  teamFilter === type
-                    ? "bg-third text-primary"
-                    : "text-[#80715f] hover:bg-gray-300"
-                } ${!hasTeamFilter ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+        {/* Row 1: Header / Filters */}
+        <div className="pt-4 pb-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <h3 className="ml-6 inline-flex items-center gap-1 text-primary bg-accent px-3 py-1 rounded-full text-sm font-medium shadow-lg shadow-accent">
+                Events <FiChevronRight />
+              </h3>
+              <button onClick={selectAll} className="text-accent underline hover:text-blue-900 text-sm">
+                {selectedGames.size === filteredGames.length ? "Unselect All" : "Select All"}
               </button>
-            ))}
+            </div>
+
+            <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm">
+              {filterOptions.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTeamFilter(type)}
+                  className={`px-3 py-1 rounded-full transition-colors ${
+                    teamFilter === type ? "bg-accent text-primary" : "text-[#80715f] hover:bg-gray-300"
+                  } ${!hasTeamFilter ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Scroll Window (between sticky header and fixed export) */}
-      <div
-        className="relative flex-1 overflow-hidden px-0.5"
-        // The inner scroller height is 100vh - header - footer
-      >
-        <div
-          className="
-            h-[calc(100vh-var(--header-h,48px)-var(--footer-h,56px))]
-            overflow-y-auto
-            grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pr-1
-          "
-          style={{
-            // Nice fades at top & bottom, works on ANY background
-            WebkitMaskImage:
-              `linear-gradient(to bottom,
-                 transparent 0,
-                 black 16px,
-                 black calc(100% - 16px),
-                 transparent 100%)`,
-            maskImage:
-              `linear-gradient(to bottom,
-                 transparent 0,
-                 black 16px,
-                 black calc(100% - 16px),
-                 transparent 100%)`,
-            scrollbarWidth: "none",
-          }}
-        >
-          {isSearchingGames ? (
-            <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
-              <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-              </svg>
-              <span>Searching...</span>
-            </div>
-          ) : upcomingGames.length === 0 ? (
-            <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg">
-              No games found. Try using the search or filters to discover games.
-            </div>
-          ) : (
-            filteredGames.map((game) => (
-              <div key={`game-${game.id}`}>
-                <GameCard
-                  homeTeam={{ name: game.homeTeamName ?? "Unknown", logoId: String(game.homeTeamId ?? "0") }}
-                  awayTeam={{ name: game.awayTeamName ?? "Unknown", logoId: String(game.awayTeamId ?? "0") }}
-                  dateUTC={game.date ?? new Date().toISOString()}
-                  isSelected={selectedGames.has(game.id)}
-                  round={game.round}
-                  onToggle={() => toggleGame(game.id)}
-                  leagueName={game.league}
-                />
+        {/* Row 2: Middle scroll window (with fades) */}
+        <div className="relative overflow-hidden">
+          <div
+            className="h-full overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pr-1"
+            style={{
+              WebkitMaskImage:
+                `linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)`,
+              maskImage:
+                `linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)`,
+              scrollbarWidth: "none",
+            }}
+          >
+            <div className="col-span-full h-4 md:h-6" />
+            {isSearchingGames ? (
+              <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
+                {/* spinner ... */}
+                <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                <span>Searching...</span>
               </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Fixed Export (bottom-right) */}
-      {filteredGames.length > 0 && (
-        <div
-          id="export-bar"
-          className="fixed bottom-0 left-0 w-full z-30 pointer-events-none"
-        >
-          <div className="w-11/12 sm:w-2/3 mx-auto py-3 flex justify-end pointer-events-auto">
-            <button
-              onClick={() => setExportOpen(true)}
-              disabled={items.length === 0}
-              className="px-5 py-2 bg-third text-primary rounded-full hover:bg-gray-400 text-sm"
-            >
-              Export {selectedGames.size > 0 ? `${selectedGames.size} Selected` : "All"} Games
-            </button>
+            ) : upcomingGames.length === 0 ? (
+              <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg">
+                No games found. Try using the search or filters to discover games.
+              </div>
+            ) : (
+              filteredGames.map((game) => (
+                <div key={`game-${game.id}`}>
+                  <GameCard
+                    homeTeam={{ name: game.homeTeamName ?? "Unknown", logoId: String(game.homeTeamId ?? "0") }}
+                    awayTeam={{ name: game.awayTeamName ?? "Unknown", logoId: String(game.awayTeamId ?? "0") }}
+                    dateUTC={game.date ?? new Date().toISOString()}
+                    isSelected={selectedGames.has(game.id)}
+                    round={game.round}
+                    onToggle={() => toggleGame(game.id)}
+                    leagueName={game.league}
+                  />
+                </div>
+              ))
+            )}
+            <div className="col-span-full h-4 md:h-6" />
           </div>
         </div>
-      )}
 
-        {/* Export Popup */}
+        {/* Row 3: Bottom-centered Export button */}
+        {items.length > 0 && (
+          <div className="py-3">
+            <div className="flex justify-center">
+              <button
+                onClick={() => setExportOpen(true)}
+                disabled={items.length === 0}
+                className="w-full max-w-[420px] px-5 py-2 bg-third text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
+              >
+                Export {selectedGames.size > 0 ? `${selectedGames.size} Selected` : `${filteredGames.length}`} Games
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-
-        <ExportModal
-          open={exportOpen}
-          onClose={() => setExportOpen(false)}
-          events={exportEvents}                 
-          calendarName="My Matches"
-          onAddToGoogle={handleGoogle}
-        />
-      
+      {/* Modal stays outside rows */}
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        events={exportEvents}
+        calendarName="My Matches"
+        onAddToGoogle={handleGoogle}
+      />
     </div>
+
   );
-}
+});
+
