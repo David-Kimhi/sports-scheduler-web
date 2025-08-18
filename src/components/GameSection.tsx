@@ -126,7 +126,7 @@ export const GameSection = forwardRef<GameSectionHandle, {
   }, []);
 
   return (
-    <div id="games-section" ref={sectionRef} className="h-screen snap-start">
+    <div id="games-section" ref={sectionRef} className="min-h-vh min-h-svh snap-start">
       <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto]">
 
         {/* Row 1: Header / Filters */}
