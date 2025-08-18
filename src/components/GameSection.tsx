@@ -126,8 +126,8 @@ export const GameSection = forwardRef<GameSectionHandle, {
   }, []);
 
   return (
-    <div id="games-section" ref={sectionRef} className="min-h-vh min-h-svh snap-start">
-      <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto]">
+    <div id="games-section" ref={sectionRef} className="h-screen snap-start">
+      <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto] min-h-0 pb-safe">
 
         {/* Row 1: Header / Filters */}
         <div className="pt-4 pb-3">
@@ -158,7 +158,7 @@ export const GameSection = forwardRef<GameSectionHandle, {
         </div>
 
         {/* Row 2: Middle scroll window (with fades) */}
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden min-h-0">
           <div
             className="h-full overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pr-1"
             style={{
