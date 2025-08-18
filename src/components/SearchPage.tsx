@@ -24,6 +24,26 @@ export default function SearchPage() {
   const gameSectionApiRef = useRef<GameSectionHandle>(null);
   const panesRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const setVH = () => {
+      const h = (window.visualViewport?.height ?? window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty("--vh", `${h}px`);
+    };
+    setVH();
+  
+    window.addEventListener("resize", setVH);
+    window.addEventListener("orientationchange", setVH);
+    window.visualViewport?.addEventListener("resize", setVH);
+    window.visualViewport?.addEventListener("scroll", setVH);
+  
+    return () => {
+      window.removeEventListener("resize", setVH);
+      window.removeEventListener("orientationchange", setVH);
+      window.visualViewport?.removeEventListener("resize", setVH);
+      window.visualViewport?.removeEventListener("scroll", setVH);
+    };
+  }, []);
+
   const [data, setData] = useState<EntityData>({
     country: [],
     league: [],
@@ -211,10 +231,10 @@ export default function SearchPage() {
   return (
     <div
       ref={panesRef}
-      className="bg-primary fixed inset-0 overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar overscroll-y-contain"
+      className="bg-primary fixed inset-0 overflow-y-auto snap-y snap-mandatory scroll-smooth no-scrollbar overscroll-y-contain pb-safe"
     >
       {/* ===== Panel 1 ===== */}
-      <section className="h-screen snap-start flex">
+      <section className="min-h-vh min-h-svh snap-start flex">
         <div className="w-11/12 sm:w-2/3 mx-auto flex flex-col">
           <h1 className="text-center text-4xl text-primary font-bold mb-6 pt-12 pb-3">
             Sports Scheduler
@@ -274,7 +294,7 @@ export default function SearchPage() {
       <section
         id="games-section"
         ref={gameSectionRef}
-        className="h-screen snap-start snap-always"
+        className="min-h-vh min-h-svh snap-start snap-always"
       >
         <div className="w-11/12 sm:w-2/3 mx-auto">
           <GameSection

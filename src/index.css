@@ -117,4 +117,16 @@
     background-color: var(--gray-100);
     color: var(--gray-700);
   }
+
+  /* Use the real visual viewport height (updated by JS below) */
+  .min-h-vh { min-height: calc(var(--vh, 1vh) * 100); }
+
+  /* Reserve safe space above the home indicator / browser controls */
+  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  
+}
+
+/* Prefer the modern small viewport unit when supported (iOS 16+/modern Android) */
+@supports (height: 100svh) {
+  .min-h-svh { min-height: 100svh; }
 }
