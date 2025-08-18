@@ -294,7 +294,7 @@ export default function SearchPage() {
       <section
         id="games-section"
         ref={gameSectionRef}
-        className="min-h-vh min-h-svh snap-start snap-always"
+        className="min-h-vh min-h-svh snap-start snap-always pb-safe"
       >
         <div className="w-11/12 sm:w-2/3 mx-auto">
           <GameSection
