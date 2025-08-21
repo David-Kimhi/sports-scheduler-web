@@ -1,10 +1,9 @@
-import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useEffect} from "react";
 
 import { GameCard } from "./GameCard";
 import { type Entity } from "../interfaces/api.interface";
 import { FiChevronRight } from "react-icons/fi";
-import ExportModal, { type CalendarEvent } from"./ExportPopup";
-
+import ExportModal, { type CalendarEvent } from "./ExportPopup";
 
 // Build CalendarEvent[] from your game objects
 function toCalendarEvents(games: Entity[]): CalendarEvent[] {
@@ -13,29 +12,24 @@ function toCalendarEvents(games: Entity[]): CalendarEvent[] {
     const start = new Date(startISO);
     const end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // default 2h
 
-    const venue = g.venueName ? `${g.venueName}, ` : ""
-    const city = g.venueCity ? `${g.venueCity}` : ""
-    const location = `${venue}${city}`
-  
+    const venue = g.venueName ? `${g.venueName}, ` : "";
+    const city = g.venueCity ? `${g.venueCity}` : "";
+    const location = `${venue}${city}`;
+
     return {
       id: String(g.id),
       title: `${g.homeTeamName ?? "Home"} vs ${g.awayTeamName ?? "Away"}`,
       description: g.round ? `Round: ${g.round}${g.league ? ` • ${g.league}` : ""}` : g.league ?? undefined,
-      location: location,
+      location,
       start: startISO,
       end,
     };
   });
 }
 
-
 const handleGoogle = async (events: CalendarEvent[]) => {
-  // TODO: trigger OAuth, create/pick a calendar, insert events
-  // Example shape you’ll need later:
-  // await fetch("/api/google/insert", { method: "POST", body: JSON.stringify({ events }) });
   console.log("Add to Google Calendar", events);
 };
-
 
 export type GameSectionHandle = {
   openExport: () => void;
@@ -45,23 +39,50 @@ export const GameSection = forwardRef<GameSectionHandle, {
   items: Entity[];
   isSearchingGames: boolean;
 }>(
-  function GameSection({ items, isSearchingGames}, ref) {
+function GameSection({ items, isSearchingGames }, ref) {
   const filterOptions = ["home", "away", "both"] as const;
   type FilterType = typeof filterOptions[number];
 
-  // Helper so numbers/strings both work
-  const hasSelected = (id: string | number) => selectedGames.has(String(id)) || selectedGames.has(Number(id));
+  // top of component
+  const MAX_EXPORT = 100;
+
+  // tiny, dependency‑free notifier
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // good cross-env typing
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (noticeTimerRef.current) {
+        clearTimeout(noticeTimerRef.current);
+        noticeTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // helper
+  const notify = (msg: string) => {
+    setNotice(msg);
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => setNotice(null), 3000);
+  };
 
   // States
   const [selectedGames, setSelectedGames] = useState<Set<string | number>>(new Set());
   const [teamFilter, setTeamFilter] = useState<FilterType>("both");
   const [exportOpen, setExportOpen] = useState(false);
 
+  // persistent watchlist across searches
+  const [watchlist, setWatchlist] = useState<CalendarEvent[]>([]);
+
   useImperativeHandle(ref, () => ({
-    openExport: () => setExportOpen(true),
+    openExport,
   }));
 
-
+  // Helpers
+  const hasSelected = (id: string | number) =>
+    selectedGames.has(String(id)) || selectedGames.has(Number(id));
 
   const selectedTeamIds = items[0]?.selectedTeamIds ?? [];
   const hasTeamFilter = selectedTeamIds.length > 0;
@@ -81,31 +102,127 @@ export const GameSection = forwardRef<GameSectionHandle, {
     return selected.includes(homeId) || selected.includes(awayId);
   });
 
-  // Memoize the final list we pass to the modal
-  const exportEvents: CalendarEvent[] = useMemo(() => {
+  // If user selected specific games -> use only those; else use all filtered results.
+  const currentSelectionEvents: CalendarEvent[] = useMemo(() => {
     const base = selectedGames.size > 0
       ? filteredGames.filter((g) => hasSelected(g.id))
       : filteredGames;
-
     return toCalendarEvents(base);
   }, [selectedGames, filteredGames]);
 
-  const toggleGame = (id: string | number) =>
+  // Effective events for export: prefer watchlist if not empty, else current selection
+  const effectiveExportEvents = watchlist.length > 0 ? watchlist : currentSelectionEvents;
+  const cappedExportEvents = effectiveExportEvents.slice(0, MAX_EXPORT);
+  const totalToExport = Math.min(effectiveExportEvents.length, MAX_EXPORT);
+  const clipped = effectiveExportEvents.length > MAX_EXPORT;
+
+
+  const toggleGame = (id: string | number) => {
     setSelectedGames((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      
+      if (next.has(id)) {next.delete(id)} else {next.add(id)};
       return next;
     });
+    setFrozenLabel(null);
+  }
 
   const selectAll = () => {
-    if (selectedGames.size === items.length) setSelectedGames(new Set());
+    if (selectedGames.size === filteredGames.length) setSelectedGames(new Set());
     else setSelectedGames(new Set(filteredGames.map((g) => g.id)));
   };
+
+  // Watchlist actions ---
+  const watchIds = useMemo(() => new Set(watchlist.map(e => e.id)), [watchlist]);
+  const selectionSig = useMemo(
+    () => currentSelectionEvents.map(e => e.id).sort().join(","),
+    [currentSelectionEvents]
+  );
+
+  const selectedCount = selectedGames.size;
+  const currentCount = selectedCount > 0 ? selectedCount : filteredGames.length;
+
+  // Track last selection signature and a frozen label
+  const [lastAddedSig, setLastAddedSig] = useState<string>("");
+  const [frozenLabel, setFrozenLabel] = useState<string | null>(null);
+
+  const resultsSig = useMemo(() => {
+      const ids = filteredGames.map(g => String(g.id)).sort();
+      return ids.join("|");
+    }, [filteredGames.map(g => g.id).sort().join("|")]);
+    
+
+  // reset on new search
+  useEffect(() => {
+    setLastAddedSig("");
+    setFrozenLabel(null); // unfrozen
+    setSelectedGames(new Set())
+  }, [resultsSig]);
+
+
+  // disable logic
+  const newlyAdded = useMemo(
+    () => currentSelectionEvents.filter(e => !watchIds.has(e.id)),
+    [currentSelectionEvents, watchIds]
+  );
+  
+  const addDisabled = newlyAdded.length === 0 || selectionSig === lastAddedSig;
+  
+  // compute label
+  const addBtnLabel = frozenLabel
+    ? frozenLabel
+    : addDisabled 
+    ? selectedCount > 0 
+    ? `Selected Games Already Added` : `Games Already Added To Watchlist` 
+    : selectedCount > 0 
+        ? `Add ${selectedCount} Selected Games To Watchlist`
+        : `Add ${currentCount} Games To Watchlist`;
+
+
+  const addToWatchlist = () => {
+    if (addDisabled) return;
+  
+    // de-duped selection
+    const newlyAdded = currentSelectionEvents.filter(e => !watchIds.has(e.id));
+  
+    if (watchlist.length >= MAX_EXPORT) {
+      notify(`Watchlist is full (${MAX_EXPORT}). Remove some to add more.`);
+      return;
+    }
+  
+    const remaining = MAX_EXPORT - watchlist.length;
+    const toAdd = newlyAdded.slice(0, remaining);
+  
+    if (toAdd.length === 0) {
+      notify(`Watchlist is full (${MAX_EXPORT}). Remove some to add more.`);
+      return;
+    }
+  
+    setWatchlist(prev => [...prev, ...toAdd]);
+  
+    // freeze label to the *actual* added number
+    const n = toAdd.length;
+    setFrozenLabel(`Added ${n} ${n === 1 ? "Game" : "Games"}`);
+    setLastAddedSig(selectionSig);
+  
+    // if we clipped due to the cap, tell the user
+    if (toAdd.length < newlyAdded.length || watchlist.length + toAdd.length === MAX_EXPORT) {
+      notify(
+        `Added ${toAdd.length}. You’ve reached the ${MAX_EXPORT} game limit.`
+      );
+    }
+  };
+
+  const clearWatchlist = () => {
+    if (watchlist.length === 0) return;
+    if (window.confirm("Clear all games from your watchlist?")) {
+      setWatchlist([]);
+      setLastAddedSig("");
+      setFrozenLabel(null);
+      notify("Watchlist cleared.");
+    }
+  };
+
+  const hasGames = items.length > 0;
 
   // --- Layout refs & vars
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -125,37 +242,49 @@ export const GameSection = forwardRef<GameSectionHandle, {
     return () => window.removeEventListener("resize", setVars);
   }, []);
 
+  const openExport = () => {
+    if (effectiveExportEvents.length > MAX_EXPORT) {
+      notify(`Export is limited to ${MAX_EXPORT}. Only the first ${MAX_EXPORT} will be exported.`);
+    }
+    setExportOpen(true);
+  };
+
   return (
     <div id="games-section" ref={sectionRef} className="h-screen snap-start">
       <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto] min-h-0 pb-safe">
-
         {/* Row 1: Header / Filters */}
-        <div className="pt-4 pb-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <h3 className="ml-6 inline-flex items-center gap-1 text-primary bg-accent px-3 py-1 rounded-full text-sm font-medium shadow-lg shadow-accent">
-                Events <FiChevronRight />
-              </h3>
-              <button onClick={selectAll} className="text-accent underline hover:text-blue-900 text-sm">
-                {selectedGames.size === filteredGames.length ? "Unselect All" : "Select All"}
-              </button>
-            </div>
+        {hasGames && (
+          <div className="pt-4 pb-2" ref={headerRef}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <h3 className="text-center ml-6 inline-flex items-center gap-1 text-primary bg-accent px-8 py-1 rounded-full text-sm font-medium ">
+                  Events <FiChevronRight />
+                </h3>
 
-            <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm">
-              {filterOptions.map((type) => (
                 <button
-                  key={type}
-                  onClick={() => setTeamFilter(type)}
-                  className={`px-3 py-1 rounded-full transition-colors ${
-                    teamFilter === type ? "bg-accent text-primary" : "text-[#80715f] hover:bg-gray-300"
-                  } ${!hasTeamFilter ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={selectAll}
+                  className="text-primary underline hover:text-blue-900 text-sm"
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {selectedGames.size === filteredGames.length ? "Unselect All" : "Select All"}
                 </button>
-              ))}
+              </div>
+
+              <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm">
+                {filterOptions.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setTeamFilter(type)}
+                    className={`px-3 py-1 rounded-full transition-colors ${
+                      teamFilter === type ? "bg-accent text-primary" : "text-[#80715f] hover:bg-gray-300"
+                    } ${!hasTeamFilter ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Row 2: Middle scroll window (with fades) */}
         <div className="relative overflow-hidden min-h-0">
@@ -172,10 +301,9 @@ export const GameSection = forwardRef<GameSectionHandle, {
             <div className="col-span-full h-4 md:h-6" />
             {isSearchingGames ? (
               <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
-                {/* spinner ... */}
                 <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
                 <span>Searching...</span>
               </div>
@@ -202,19 +330,68 @@ export const GameSection = forwardRef<GameSectionHandle, {
           </div>
         </div>
 
-        {/* Row 3: Bottom-centered Export button */}
-        {items.length > 0 && (
-          <div className="py-3">
-            <div className="flex justify-center">
-              <button
-                onClick={() => setExportOpen(true)}
-                disabled={items.length === 0}
-                className="w-full max-w-[420px] px-5 py-2 bg-third text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
-              >
-                Export {selectedGames.size > 0 ? `${selectedGames.size} Selected` : `${filteredGames.length}`} Games
-              </button>
+        {/* Row 3: Bottom action bar (Clear | Add to watchlist | Export) */}
+        {hasGames && (
+          <div id="export-bar" className="py-3">
+            <div className="mx-auto w-full flex gap-3 items-start">
+              
+              {/* Left: Clear */}
+              <div className="flex-1">
+                <button
+                  onClick={clearWatchlist}
+                  className="w-full px-5 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm disabled:opacity-50"
+                  disabled={watchlist.length === 0}
+                  title={watchlist.length === 0 ? "Watchlist is empty" : "Clear watchlist"}
+                >
+                  Clear Watchlist
+                </button>
+              </div>
+          
+              {/* Center: Add to watchlist + caption */}
+              <div className="flex-1">
+                <button
+                  onClick={addToWatchlist}
+                  disabled={addDisabled}
+                  className="w-full px-5 py-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
+                >
+                  {addBtnLabel}
+                </button>
+                <div className="mt-1 text-xs text-gray-600 text-center">
+                  You currently have {watchlist.length}/100 {watchlist.length === 1 ? "game" : "games"} in your watchlist
+                </div>
+
+                {notice && (
+                <div className="mt-1 text-xs text-red-600 text-center">{notice}</div>
+              )}
+
+              </div>
+
+         
+
+              {/* Right: Export */}
+              <div className="flex-1">
+                <button
+                  onClick={openExport}
+                  className="w-full px-5 py-2 bg-third text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
+                  disabled={effectiveExportEvents.length === 0}
+                  title={
+                    effectiveExportEvents.length === 0
+                      ? "Nothing to export yet"
+                      : `Export ${effectiveExportEvents.length} ${effectiveExportEvents.length === 1 ? "game" : "games"}`
+                  }
+                >
+                  Export {totalToExport} {totalToExport === 1 ? "Game" : "Games"}
+                </button>
+
+                {clipped && (
+                  <div className="mt-1 text-xs text-amber-600 text-right">
+                    Only the first {MAX_EXPORT} will be exported.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        
         )}
       </div>
 
@@ -222,12 +399,11 @@ export const GameSection = forwardRef<GameSectionHandle, {
       <ExportModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        events={exportEvents}
-        calendarName="My Matches"
+        // Use watchlist if available; else use current selection
+        events={cappedExportEvents}
+        calendarName="Watchlist"
         onAddToGoogle={handleGoogle}
       />
     </div>
-
   );
 });
-

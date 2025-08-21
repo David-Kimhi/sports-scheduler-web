@@ -19,7 +19,7 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
   const logoSrc: string | undefined = logos[logoKey] || logos[pngKey];
 
   // layout constants
-  const baseWidth = 200;                 // fixed width when not hovering
+  const baseWidth = 170;                 // fixed width when not hovering
   const logoPx = 32;                     // w-8 => ~32px 
   const gapPx = 18;                      // gap-3 => ~12px. If gap-4 => 16px
 
@@ -44,8 +44,6 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
       const w1 = Math.ceil(padX + logoPx + gapPx + titleW);
       const w2 = Math.ceil(padX + logoPx + gapPx + descW);
       const w3 = baseWidth;
-      setHoverWidth(Math.max(w1, w2, w3));
-
       setHoverWidth(Math.max(w1, w2, w3));
     };
 
@@ -78,14 +76,14 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
   return (
     <div
       onClick={() => item.type !== "game" && onSelect(item)}
-      className={`group ${cardBase}${bg} flex-none shrink-0 min-h-[24px]`}
+      className={`group ${cardBase}${bg} flex-none shrink-0 h-8 items-center`}
       style={{ width: baseWidth }}
-      onMouseEnter={(e) => { e.currentTarget.style.width = `${hoverWidth}px`; }}
-      onMouseLeave={(e) => { e.currentTarget.style.width = `${baseWidth}px`; }}
+      onMouseEnter={(e) => { e.currentTarget.style.width = `${hoverWidth}px`; e.currentTarget.style.height = `50px`}}
+      onMouseLeave={(e) => { e.currentTarget.style.width = `${baseWidth}px`; e.currentTarget.style.height = `32px`}}
     >
       {/* Logo */}
       <div style={{ width: logoPx, height: logoPx }} className="flex items-center justify-center">
-        <div className="relative w-8 h-8 flex-shrink-0">
+        <div className="relative w-5 h-5 flex-shrink-0">
           <img
             src={logoSrc}
             alt={`${item.name} flag`}
@@ -97,22 +95,22 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
 
       {/* Text column */}
       <div className="flex flex-col flex-1 justify-center overflow-hidden min-w-0">
-        <h4
+        <h5
           ref={titleRef}
           className="
-            text-base font-bold text-gray-800 text-center
+            text-sm font-bold text-gray-800 text-center
             transition-transform duration-300 group-hover:-translate-y-1
             whitespace-nowrap overflow-hidden text-ellipsis
             group-hover:overflow-visible group-hover:text-clip
           "
         >
           {item.name}
-        </h4>
+        </h5>
 
         <p
           ref={descRef}
           className="
-            text-sm text-gray-700 text-center
+            text-xs text-gray-700 text-center
             opacity-0 max-h-0 overflow-hidden whitespace-nowrap
             transition-[max-height,opacity] duration-300 ease-in-out
             group-hover:opacity-100 group-hover:max-h-5

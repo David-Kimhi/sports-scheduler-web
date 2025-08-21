@@ -73,7 +73,7 @@ export function Section({
   });
 
   return (
-    <div className="mt-3 pr-3 pl-3 relative">
+    <div className="pr-8 pl-8 relative">
       <div className="flex justify-between items-center">
         <h3 className="ml-6 inline-flex items-center text-gray-900 text-sm font-medium">
           {title} <FiChevronRight />
@@ -89,7 +89,7 @@ export function Section({
                 ${atStart ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
               title={atStart ? "At start" : "Scroll left"}
             >
-              <FiChevronLeft size={15} />
+              <FiChevronLeft size={13} />
             </button>
             <button
               onClick={scrollRight}
@@ -98,7 +98,7 @@ export function Section({
                 ${atEnd ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
               title={atEnd ? "At end" : "Scroll right"}
             >
-              <FiChevronRight size={15} />
+              <FiChevronRight size={13} />
             </button>
           </div>
         )}
@@ -107,8 +107,8 @@ export function Section({
       <div className="py-2 overflow-visible">
         <div
           ref={containerRef}
-          onScroll={measure} // extra safety (React onScroll)
-          className="flex gap-4 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap min-h-[70px]"
+          onScroll={measure} // extra safety 
+          className="flex gap-3 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap min-h-[60px]"
         >
           {orderedItems.map(item => (
             <Card

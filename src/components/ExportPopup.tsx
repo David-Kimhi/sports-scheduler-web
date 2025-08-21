@@ -172,8 +172,8 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
         {/* Body */}
         <div className="p-5 space-y-3">
           <p className="text-sm text-gray-600">
-            Choose how you want to add <span className="font-medium">{events.length}</span> event{events.length === 1 ? "" : "s"} from
-            <span className="ml-1 font-medium">{calendarName}</span> to your calendar.
+            Choose how you want to add <span className="font-bold">{events.length}</span> event{events.length === 1 ? "" : "s"} from
+            <span className="ml-1 font-bold">{calendarName}</span> to your calendar.
           </p>
 
           <button
@@ -187,8 +187,9 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
 
           <button
             onClick={onGoogle}
-            disabled={!onAddToGoogle || disabled}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-selected-card text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            // disabled={!onAddToGoogle || disabled}
+            disabled={true}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-selected-card text-white hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {/* Simple Google "G" (text), replace with SVG if you have assets */}
             <span className="font-bold text-base">G</span>

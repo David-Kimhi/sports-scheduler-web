@@ -11,6 +11,8 @@
   --color-card: #C9CBCF;
   --color-game-card: #E3EEF2;
 
+  --color-accent-hard: #69807c;
+
   /* Shadows */
   --shadow-primary: #866F09;
   --shadow-accent: #485a56;
@@ -18,7 +20,7 @@
   /* Text & Borders */
   --text-primary: black;
   --text-accent-2: #071013;
-  --text-accent: var(--color-secondary);
+  --text-accent: var(--color-accent);
   --border-primary: var(--text-primary);
 
   /* Gradient colors */
@@ -109,6 +111,20 @@
     to { background-position: 200% 0; }
   }
 
+  @keyframes flash-border {
+    0%, 100% {
+      border-color: var(--color-secondary); 
+    }
+    50% {
+      border-color: #149cc5; /* flash color */
+    }
+  }
+  
+  .flash-border {
+    animation: flash-border 2s infinite;
+  }
+
+
   /* Inner button inside gradient border */
   .gradient-border button {
     position: relative;
@@ -123,6 +139,20 @@
 
   /* Reserve safe space above the home indicator / browser controls */
   .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
+
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+
+  .animate-blink {
+    animation: blink 2s steps(1, start) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-blink { animation: none; }
+  }
+
+  
   
 }
 
