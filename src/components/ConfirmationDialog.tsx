@@ -21,7 +21,7 @@ export function ConfirmDialog({
   
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-        <div className="bg-white rounded-xl shadow-xl p-6 w-80">
+        <div className="bg-white rounded-2xl shadow-xl p-7 w-120">
           <h2 className="text-lg font-semibold mb-2">{title ?? "Confirm"}</h2>
           <p className="text-sm text-gray-600 mb-4">{message ?? "Are you sure?"}</p>
   
@@ -38,7 +38,7 @@ export function ConfirmDialog({
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-md bg-gray-100 hover:bg-gray-200"
+              className="px-4 py-2 text-sm rounded-full bg-gray-100 hover:bg-gray-300"
             >
               Cancel
             </button>
@@ -48,7 +48,7 @@ export function ConfirmDialog({
                 if (onDontShowAgain) onDontShowAgain(dontShow);
                 onClose();
               }}
-              className="px-4 py-2 text-sm rounded-md bg-gray-800 text-white hover:bg-gray-400"
+              className="px-4 py-2 text-sm rounded-full bg-gray-700 text-white hover:bg-gray-300"
             >
               Yes, clear
             </button>

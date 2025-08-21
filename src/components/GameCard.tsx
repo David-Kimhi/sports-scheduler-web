@@ -56,20 +56,20 @@ export function GameCard({
         aria-hidden
         className={[
           "pointer-events-none absolute inset-0 rounded-xl border-2",
-          isToday ? "border-red-500 animate-blink" :
-          isNextWeek ? "border-orange-500" :
+          isToday ? "border-gray-600 animate-blink" :
+          isNextWeek ? "border-gray-400" :
           "border-transparent"
         ].join(' ')}
       />
 
       {/* Bottom-left status badge */}
       {isToday && (
-        <span className="absolute bottom-2 left-2 z-10 text-xs font-bold text-white bg-red-600/90 px-2 py-0.5 rounded-md animate-blink">
+        <span className="absolute bottom-2 left-2 z-10 text-xs font-bold text-white bg-gray-600/90 px-2 py-0.5 rounded-md animate-blink">
           today
         </span>
       )}
       {isNextWeek && (
-        <span className="absolute bottom-2 left-2 z-10 text-xs font-semibold text-white bg-orange-500/90 px-2 py-0.5 rounded-md">
+        <span className="absolute bottom-2 left-2 z-10 text-xs font-semibold text-white bg-gray-400/90 px-2 py-0.5 rounded-md">
           in {daysDiff} days
         </span>
       )}

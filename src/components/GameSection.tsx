@@ -361,7 +361,7 @@ function GameSection({ items, isSearchingGames }, ref) {
                 <button
                   onClick={addToWatchlist}
                   disabled={addDisabled}
-                  className="w-full px-5 py-2 bg-accent text-primary rounded-full hover:bg-gray-700 text-sm disabled:opacity-50"
+                  className="w-full px-5 py-2 bg-accent text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
                 >
                   {addBtnLabel}
                 </button>
@@ -381,7 +381,7 @@ function GameSection({ items, isSearchingGames }, ref) {
               <div className="flex-1">
                 <button
                   onClick={openExport}
-                  className="w-full px-5 py-2 rounded-full bg-gray-700 text-white hover:bg-gray-300 text-sm disabled:opacity-50"
+                  className="w-full px-5 py-2 rounded-full bg-gray-700 text-white hover:bg-gray-400 hover:text-black text-sm disabled:opacity-50"
                   disabled={effectiveExportEvents.length === 0}
                   title={
                     effectiveExportEvents.length === 0

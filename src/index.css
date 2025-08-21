@@ -84,6 +84,8 @@
   .text-accent { color: var(--text-accent); }
   .text-accent-2 {color: var(--text-accent-2)}
   .border-primary { border-color: var(--border-primary); }
+  .border-accent { border-color: var(--color-accent);}
+  .border-selected-card {border-color: var(--color-secondary);}
 
   /* Gradient animation */
   @keyframes flowing-gradient {

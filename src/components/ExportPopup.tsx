@@ -162,7 +162,7 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
           <button
             ref={closeBtnRef}
             onClick={onClose}
-            className="p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-2 rounded-full text-gray-500 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-600"
             aria-label="Close"
           >
             <FiX className="h-5 w-5" />
@@ -171,7 +171,7 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
 
         {/* Body */}
         <div className="p-5 space-y-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-primary">
             Choose how you want to add <span className="font-bold">{events.length}</span> event{events.length === 1 ? "" : "s"} from
             <span className="ml-1 font-bold">{calendarName}</span> to your calendar.
           </p>
@@ -179,7 +179,7 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
           <button
             onClick={onDownloadICS}
             disabled={disabled}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 border border-gray-200 bg-primary hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 border border-gray-200 bg-accent hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiDownload className="h-5 w-5" />
             <span className="font-medium">Download .ics file</span>
