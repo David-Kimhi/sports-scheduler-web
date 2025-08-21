@@ -5,6 +5,7 @@ import { GameCard } from "./GameCard";
 import { type Entity } from "../interfaces/api.interface";
 import { FiChevronRight } from "react-icons/fi";
 import ExportModal, { type CalendarEvent } from "./ExportPopup";
+import { GameActionBar } from "./GameActionBar";
 
 // Build CalendarEvent[] from your game objects
 function toCalendarEvents(games: Entity[]): CalendarEvent[] {
@@ -114,7 +115,6 @@ function GameSection({ items, isSearchingGames }, ref) {
   // Effective events for export: prefer watchlist if not empty, else current selection
   const effectiveExportEvents = watchlist.length > 0 ? watchlist : currentSelectionEvents;
   const cappedExportEvents = effectiveExportEvents.slice(0, MAX_EXPORT);
-  const totalToExport = Math.min(effectiveExportEvents.length, MAX_EXPORT);
   const clipped = effectiveExportEvents.length > MAX_EXPORT;
 
 
@@ -260,13 +260,14 @@ function GameSection({ items, isSearchingGames }, ref) {
 
   return (
     <div id="games-section" ref={sectionRef} className="h-screen snap-start">
-      <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto] min-h-0 pb-safe">
+      <div className="mx-auto h-full grid grid-rows-[auto,1fr,auto] min-h-0">
         {/* Row 1: Header / Filters */}
         {hasGames && (
-          <div className="pt-4 pb-2" ref={headerRef}>
-            <div className="flex justify-between items-center">
+          <div className="pt-3 pb-2 sm:pt-4 sm:pb-2" ref={headerRef}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              {/* Left cluster */}
               <div className="flex items-center gap-3">
-                <h3 className="text-center ml-6 inline-flex items-center gap-1 text-primary bg-accent px-8 py-1 rounded-full text-sm font-medium ">
+                <h3 className="ml-1 sm:ml-6 inline-flex items-center gap-1 text-primary bg-accent px-4 sm:px-8 py-1 rounded-full text-sm font-medium">
                   Events <FiChevronRight />
                 </h3>
 
@@ -278,7 +279,8 @@ function GameSection({ items, isSearchingGames }, ref) {
                 </button>
               </div>
 
-              <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm">
+              {/* Filters cluster */}
+              <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm self-start sm:self-auto">
                 {filterOptions.map((type) => (
                   <button
                     key={type}
@@ -295,10 +297,11 @@ function GameSection({ items, isSearchingGames }, ref) {
           </div>
         )}
 
-        {/* Row 2: Middle scroll window (with fades) */}
+        {/* Row 2: Cards (add bottom padding for the fixed action bar on mobile) */}
         <div className="relative overflow-hidden min-h-0">
           <div
-            className="h-full overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 pr-1"
+            className="h-full overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 pr-1
+                      pb-[88px] sm:pb-0" // <- space for fixed bar on mobile
             style={{
               WebkitMaskImage:
                 `linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)`,
@@ -307,108 +310,60 @@ function GameSection({ items, isSearchingGames }, ref) {
               scrollbarWidth: "none",
             }}
           >
-            <div className="col-span-full h-4 md:h-6" />
-            {isSearchingGames ? (
-              <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
-                <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                <span>Searching...</span>
-              </div>
-            ) : upcomingGames.length === 0 ? (
-              <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg">
-                No games found. Try using the search or filters to discover games.
-              </div>
-            ) : (
-              filteredGames.map((game) => (
-                <div key={`game-${game.id}`}>
-                  <GameCard
-                    homeTeam={{ name: game.homeTeamName ?? "Unknown", logoId: String(game.homeTeamId ?? "0") }}
-                    awayTeam={{ name: game.awayTeamName ?? "Unknown", logoId: String(game.awayTeamId ?? "0") }}
-                    dateUTC={game.date ?? new Date().toISOString()}
-                    isSelected={selectedGames.has(game.id)}
-                    round={game.round}
-                    onToggle={() => toggleGame(game.id)}
-                    leagueName={game.league}
-                  />
+            <div className="col-span-full h-2 sm:h-4" />
+              {isSearchingGames ? (
+                <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
+                  <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  <span>Searching...</span>
                 </div>
-              ))
-            )}
-            <div className="col-span-full h-4 md:h-6" />
+              ) : upcomingGames.length === 0 ? (
+                <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg">
+                  No games found. Try using the search or filters to discover games.
+                </div>
+              ) : (
+                filteredGames.map((game) => (
+                  <div key={`game-${game.id}`}>
+                    <GameCard
+                      homeTeam={{ name: game.homeTeamName ?? "Unknown", logoId: String(game.homeTeamId ?? "0") }}
+                      awayTeam={{ name: game.awayTeamName ?? "Unknown", logoId: String(game.awayTeamId ?? "0") }}
+                      dateUTC={game.date ?? new Date().toISOString()}
+                      isSelected={selectedGames.has(game.id)}
+                      round={game.round}
+                      onToggle={() => toggleGame(game.id)}
+                      leagueName={game.league}
+                    />
+                  </div>
+                ))
+              )}
+            <div className="col-span-full h-2 sm:h-4" />
           </div>
         </div>
 
-        {/* Row 3: Bottom action bar (Clear | Add to watchlist | Export) */}
+        {/* Row 3: Action bar (mobile fixed, desktop static via component) */}
         {hasGames && (
-          <div id="export-bar" className="py-3">
-            <div className="mx-auto w-full flex gap-3 items-start">
-              
-              {/* Left: Clear */}
-              <div className="flex-1">
-                <button
-                  onClick={clearWatchlist}
-                  className="w-full px-5 py-2 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm disabled:opacity-50"
-                  disabled={watchlist.length === 0}
-                  title={watchlist.length === 0 ? "Watchlist is empty" : "Clear watchlist"}
-                >
-                  Clear Watchlist
-                </button>
-              </div>
-          
-              {/* Center: Add to watchlist + caption */}
-              <div className="flex-1">
-                <button
-                  onClick={addToWatchlist}
-                  disabled={addDisabled}
-                  className="w-full px-5 py-2 bg-accent text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
-                >
-                  {addBtnLabel}
-                </button>
-                <div className="mt-1 text-xs text-gray-600 text-center">
-                  You currently have {watchlist.length}/100 {watchlist.length === 1 ? "game" : "games"} in your watchlist
-                </div>
-
-                {notice && (
-                <div className="mt-1 text-xs text-red-600 text-center">{notice}</div>
-              )}
-
-              </div>
-
-         
-
-              {/* Right: Export */}
-              <div className="flex-1">
-                <button
-                  onClick={openExport}
-                  className="w-full px-5 py-2 rounded-full bg-gray-700 text-white hover:bg-gray-400 hover:text-black text-sm disabled:opacity-50"
-                  disabled={effectiveExportEvents.length === 0}
-                  title={
-                    effectiveExportEvents.length === 0
-                      ? "Nothing to export yet"
-                      : `Export ${effectiveExportEvents.length} ${effectiveExportEvents.length === 1 ? "game" : "games"}`
-                  }
-                >
-                  Export {totalToExport} {totalToExport === 1 ? "Game" : "Games"}
-                </button>
-
-                {clipped && (
-                  <div className="mt-1 text-xs text-amber-600 text-right">
-                    Only the first {MAX_EXPORT} will be exported.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        
+          <GameActionBar
+            onClear={clearWatchlist}
+            onAdd={addToWatchlist}
+            onExport={openExport}
+            clearDisabled={watchlist.length === 0}
+            addDisabled={addDisabled}
+            exportDisabled={effectiveExportEvents.length === 0}
+            addLabel={addBtnLabel}
+            notice={notice}
+            watchlistLen={watchlist.length}
+            maxExport={MAX_EXPORT}
+            clipped={clipped}
+          />
         )}
       </div>
 
-      {/* Modal stays outside rows */}
+      {/* Modals unchanged */}
       <ExportModal
         open={exportOpen}
         onClose={() => setExportOpen(false)}
-        // Use watchlist if available; else use current selection
         events={cappedExportEvents}
         calendarName="Watchlist"
         onAddToGoogle={handleGoogle}
@@ -435,3 +390,4 @@ function GameSection({ items, isSearchingGames }, ref) {
     </div>
   );
 });
+
