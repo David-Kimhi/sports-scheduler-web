@@ -92,7 +92,8 @@
   }
 
   .gradient-border {
-    display: inline-block;          /* don't become full-width */
+    display: block; 
+    width: 100%;         /* don't become full-width */
     position: relative;
     border-radius: 9999px;
     padding: 2px;                   /* thickness of the border */
@@ -113,15 +114,15 @@
 
   @keyframes flash-border {
     0%, 100% {
-      border-color: var(--color-secondary); 
+      border-color: var(--gray-700); 
     }
     50% {
-      border-color: #149cc5; /* flash color */
+      border-color: #A2AEBB; /* flash color */
     }
   }
   
   .flash-border {
-    animation: flash-border 2s infinite;
+    animation: flash-border 1.5s infinite;
   }
 
 

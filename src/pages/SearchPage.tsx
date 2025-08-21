@@ -133,19 +133,21 @@ export default function SearchPage() {
             />
           ))}
 
+
           <div className="mt-auto pb-6 flex justify-center">
-            <button
-              className={[
-                "w-full px-5 py-2 rounded-full text-sm shadow-lg transition-colors ",
-                "text-primary hover:bg-gray-400 bg-white ",
-                filters.length === 0 && "opacity-50 cursor-not-allowed",
-                filters.length > 0 && "border-3 flash-border", 
-              ].filter(Boolean).join(" ")}
-              onClick={handleFabSearchClick}
-              disabled={filters.length === 0}
-            >
-              Search Games
-            </button>
+            <div className={filters.length > 0 ? "gradient-border" : "w-full"}>
+              <button
+                className={[
+                  "w-full px-5 py-2 rounded-full text-sm shadow-lg transition-colors ",
+                  "text-primary hover:bg-gray-300 bg-primary ",
+                  filters.length === 0 && "border-2 border-gray-400 opacity-50 cursor-not-allowed",
+                ].filter(Boolean).join(" ")}
+                onClick={handleFabSearchClick}
+                disabled={filters.length === 0}
+              >
+                Search Games
+              </button>
+            </div>
           </div>
         </div>
       </section>

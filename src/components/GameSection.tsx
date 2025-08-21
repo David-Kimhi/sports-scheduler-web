@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useEffect} from "react";
 
+import { ConfirmDialog } from "./ConfirmationDialog";
 import { GameCard } from "./GameCard";
 import { type Entity } from "../interfaces/api.interface";
 import { FiChevronRight } from "react-icons/fi";
@@ -212,16 +213,6 @@ function GameSection({ items, isSearchingGames }, ref) {
     }
   };
 
-  const clearWatchlist = () => {
-    if (watchlist.length === 0) return;
-    if (window.confirm("Clear all games from your watchlist?")) {
-      setWatchlist([]);
-      setLastAddedSig("");
-      setFrozenLabel(null);
-      notify("Watchlist cleared.");
-    }
-  };
-
   const hasGames = items.length > 0;
 
   // --- Layout refs & vars
@@ -247,6 +238,24 @@ function GameSection({ items, isSearchingGames }, ref) {
       notify(`Export is limited to ${MAX_EXPORT}. Only the first ${MAX_EXPORT} will be exported.`);
     }
     setExportOpen(true);
+  };
+
+  // Confirmation Dialog
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [skipConfirm, setSkipConfirm] = useState(
+    () => localStorage.getItem("skipClearConfirm") === "true"
+  );
+
+  const clearWatchlist = () => {
+    if (skipConfirm) {
+      // just clear without asking
+      setWatchlist([]);
+      setLastAddedSig("");
+      setFrozenLabel(null);
+      notify("Watchlist cleared.");
+    } else {
+      setConfirmOpen(true);
+    }
   };
 
   return (
@@ -352,7 +361,7 @@ function GameSection({ items, isSearchingGames }, ref) {
                 <button
                   onClick={addToWatchlist}
                   disabled={addDisabled}
-                  className="w-full px-5 py-2 rounded-full bg-gray-800 text-white hover:bg-gray-700 text-sm disabled:opacity-50"
+                  className="w-full px-5 py-2 bg-accent text-primary rounded-full hover:bg-gray-700 text-sm disabled:opacity-50"
                 >
                   {addBtnLabel}
                 </button>
@@ -372,7 +381,7 @@ function GameSection({ items, isSearchingGames }, ref) {
               <div className="flex-1">
                 <button
                   onClick={openExport}
-                  className="w-full px-5 py-2 bg-third text-primary rounded-full hover:bg-gray-400 text-sm disabled:opacity-50"
+                  className="w-full px-5 py-2 rounded-full bg-gray-700 text-white hover:bg-gray-300 text-sm disabled:opacity-50"
                   disabled={effectiveExportEvents.length === 0}
                   title={
                     effectiveExportEvents.length === 0
@@ -403,6 +412,25 @@ function GameSection({ items, isSearchingGames }, ref) {
         events={cappedExportEvents}
         calendarName="Watchlist"
         onAddToGoogle={handleGoogle}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setWatchlist([]);
+          setLastAddedSig("");
+          setFrozenLabel(null);
+          notify("Watchlist cleared.");
+        }}
+        onDontShowAgain={(checked) => {
+          if (checked) {
+            setSkipConfirm(true);
+            localStorage.setItem("skipClearConfirm", "true");
+          }
+        }}
+        title="Clear Watchlist?"
+        message="This will remove all games from your watchlist."
       />
     </div>
   );
