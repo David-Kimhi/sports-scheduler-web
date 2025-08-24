@@ -70,36 +70,18 @@ export function SearchBar({
         </button>
 
         {/* pills flow inline, before the input caret */}
-        <div ref={pillsRef} className="absolute left-11 top-1/2 -translate-y-1/2 flex gap-1 items-center">
+        <div
+          ref={pillsRef}
+          className="absolute left-11 top-1/2 -translate-y-1/2 flex gap-1 items-center z-20 pointer-events-auto"
+        >
           {filters.map((f) => (
-              <Pill key={`${f.type}-${f.id}`} item={f} onRemove={onRemovePill} />
-            ))}
+            <Pill key={`${f.type}-${f.id}`} item={f} onRemove={onRemovePill} />
+          ))}
         </div>
-
-
-        {/* GHOST suggestion: place BEFORE the input and behind it */}
-        {query && suggestionLabel && (
-          <div
-            className="
-              pointer-events-none absolute left-[7px] right-0
-              top-1/2 -translate-y-1/2
-              z-0
-              text-gray-400/70
-              whitespace-nowrap overflow-hidden text-ellipsis
-              text-base leading-6
-            "
-            style={{ paddingLeft: leftPad, paddingRight: 12 }}
-            aria-hidden="true"
-          >
-            {suggestionLabel.toLowerCase().startsWith(query.toLowerCase())
-              ? query + suggestionLabel.slice(query.length)
-              : suggestionLabel}
-          </div>
-        )}
 
         {/* INPUT: put above the ghost and match font metrics */}
         <input
-          className="relative z-10 w-full bg-transparent outline-none text-base leading-6"
+          className="relative z-10 w-full bg-transparent outline-none"
           style={{ paddingLeft: leftPad, paddingRight: 12 }}
           value={query}
           onFocus={() => setIsFocused(true)}
@@ -120,6 +102,26 @@ export function SearchBar({
           aria-autocomplete="both"
           autoComplete="off"
         />
+
+        {/* GHOST suggestion: place BEFORE the input and behind it */}
+        {query && suggestionLabel && (
+          <div
+            className="
+              pointer-events-none absolute left-[7px] right-0
+              top-1/2 -translate-y-1/2
+              z-0
+              text-gray-400/70
+              whitespace-nowrap overflow-hidden text-ellipsis
+              text-base leading-6
+            "
+            style={{ paddingLeft: leftPad, paddingRight: 12 }}
+            aria-hidden="true"
+          >
+            {suggestionLabel.toLowerCase().startsWith(query.toLowerCase())
+              ? query + suggestionLabel.slice(query.length)
+              : suggestionLabel}
+          </div>
+        )}
       </div>
   );
 }
