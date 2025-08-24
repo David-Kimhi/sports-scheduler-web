@@ -21,6 +21,8 @@ export default function SearchPage() {
   const gameSectionApiRef = useRef<GameSectionHandle>(null);
   const panesRef = useRef<HTMLDivElement>(null);
 
+  const searchGamesDisabled = filters.length === 0;
+
   // if an entity was selected 
   const isSelected = useCallback(
     (it: Entity) => filters.some(f => f.id === it.id && f.type === it.type),
@@ -147,7 +149,7 @@ const handleEnter = useCallback(() => {
     toggleFilters(bestMatch);
     lastEnterAddedRef.current = { id: bestMatch.id, type: bestMatch.type };
     setQuery(""); // clear after accept (common autocomplete behaviour)
-  }
+  } else if (!searchGamesDisabled) {handleFabSearchClick()}
 }, [bestMatch, toggleFilters, setQuery]);
 
 // remove last or the “enter-added” one
@@ -221,7 +223,11 @@ const popLastFilter = useCallback(() => {
               "sm:static sm:px-0 sm:pt-0 sm:pb-6", // desktop spacing
             ].join(" ")}
           >
-            <div className={filters.length > 0 ? "gradient-border block w-full" : "w-full"}>
+            <div  className={[
+                filters.length > 0 ? "gradient-border" : "",
+                "block w-full sm:w-4/5 mx-auto", 
+              ].join(" ")}
+            >
               <button
                 className={[
                   "w-full min-h-12 px-5 py-2 rounded-full text-sm shadow-lg transition-colors",
@@ -229,7 +235,7 @@ const popLastFilter = useCallback(() => {
                   filters.length === 0 && "border-2 border-gray-400 opacity-50 cursor-not-allowed",
                 ].filter(Boolean).join(" ")}
                 onClick={handleFabSearchClick}
-                disabled={filters.length === 0}
+                disabled={searchGamesDisabled}
               >
                 Search Games
               </button>
