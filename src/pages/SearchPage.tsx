@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // File: src/pages/SearchPage.tsx
 // ──────────────────────────────────────────────────────────────────────────────
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { API_BASE, FOOTBALL_ENDPOINT } from "../config";
 import type { Entity } from "../interfaces/api.interface";
 import type { EntityData } from "../interfaces/entityTypes.interface";
@@ -20,6 +20,45 @@ export default function SearchPage() {
   const gameSectionRef = useRef<HTMLDivElement>(null);
   const gameSectionApiRef = useRef<GameSectionHandle>(null);
   const panesRef = useRef<HTMLDivElement>(null);
+
+  // if an entity was selected 
+  const isSelected = useCallback(
+    (it: Entity) => filters.some(f => f.id === it.id && f.type === it.type),
+    [filters]
+  );
+
+  // last entered filter
+  const lastEnterAddedRef = useRef<{id: string | number; type: Entity["type"]} | null>(null);
+
+
+  const bestMatch = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return null;
+
+    type EntityBuckets = Pick<EntityData, "country" | "league" | "team">;
+    const pools: Array<keyof EntityBuckets> = ["country", "league", "team"];
+    for (const type of pools) {
+      const list = data[type] ?? [];
+      const found = list.find((it: Entity) => {
+        if (isSelected(it)) return false;           // don’t re-select pinned/selected
+        const name = it.name.toLowerCase();
+        return name.includes(q);
+      });
+      if (found) return found;
+    }
+    return null;
+  }, [query, data, isSelected]);
+
+  const suggestionLabel = useMemo(() => {
+    if (!bestMatch) return "";
+    const name = bestMatch.name;
+    const q = query.trim().toLowerCase();
+    const n = String(name);
+    // Prefer prefix-completion visual; if not prefix, show full name as the hint.
+    const starts = n.toLowerCase().startsWith(q);
+    return starts ? n : n; // keep simple: show full name; SearchBar will render ghost after `query`
+  }, [bestMatch, query]);
+
 
   // viewport unit handling (mobile safe 100vh)
   useEffect(() => {
@@ -102,6 +141,36 @@ export default function SearchPage() {
     });
   }, [searchGames]);
 
+  // when Enter selects a bestMatch, remember it so Backspace can undo
+const handleEnter = useCallback(() => {
+  if (bestMatch) {
+    toggleFilters(bestMatch);
+    lastEnterAddedRef.current = { id: bestMatch.id, type: bestMatch.type };
+    setQuery(""); // clear after accept (common autocomplete behaviour)
+  }
+}, [bestMatch, toggleFilters, setQuery]);
+
+// remove last or the “enter-added” one
+const popLastFilter = useCallback(() => {
+  setFilters((prev) => {
+    if (prev.length === 0) return prev;
+
+    let idx = prev.length - 1;
+    if (lastEnterAddedRef.current) {
+      const i = prev.findIndex(
+        f => f.id === lastEnterAddedRef.current!.id && f.type === lastEnterAddedRef.current!.type
+      );
+      if (i !== -1) idx = i;
+      lastEnterAddedRef.current = null;
+    }
+
+    const next = prev.filter((_, i) => i !== idx);
+    // keep data in sync
+    fetchResults({ useFilters: next, useQuery: query });
+    return next;
+  });
+}, [fetchResults, query]);
+
   const sections = [
     { title: "Countries", type: "country" as const, items: pinSelected("country", filters, data.country) },
     { title: "Leagues",  type: "league"  as const, items: pinSelected("league",  filters, data.league)  },
@@ -126,6 +195,9 @@ export default function SearchPage() {
             filters={filters}
             onRemovePill={removePill}
             onIconClick={() => fetchResults()}
+            onEnter={handleEnter}  
+            suggestionLabel={suggestionLabel}     
+            onBackspaceEmpty={popLastFilter}  
           />
 
           {sections.map(({ title, type, items }) => (
