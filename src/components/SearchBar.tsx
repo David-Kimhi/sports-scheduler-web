@@ -103,25 +103,34 @@ export function SearchBar({
           autoComplete="off"
         />
 
-        {/* GHOST suggestion: place BEFORE the input and behind it */}
-        {query && suggestionLabel && (
+        {/* GHOST suggestion */}
+        {query && suggestionLabel && suggestionLabel.toLowerCase().startsWith(query.toLowerCase()) && (
           <div
             className="
-              pointer-events-none absolute left-[7px] right-0
+              pointer-events-none absolute
               top-1/2 -translate-y-1/2
               z-0
-              text-gray-400/70
-              whitespace-nowrap overflow-hidden text-ellipsis
-              text-base leading-6
+              flex items-center gap-1
+              text-sm
             "
-            style={{ paddingLeft: leftPad, paddingRight: 12 }}
+            style={{ paddingLeft: leftPad + 4, paddingRight: 12 }}
             aria-hidden="true"
           >
-            {suggestionLabel.toLowerCase().startsWith(query.toLowerCase())
-              ? query + suggestionLabel.slice(query.length)
-              : suggestionLabel}
+            {/* Show what the user typed, invisible (to “occupy” the space) */}
+            <span className="opacity-0">{query}</span>
+
+            {/* The suggested pill comes right after */}
+            <span
+              className="
+              flex items-center bg-gray-100 text-gray-500 
+              px-2 py-0.5 rounded-full text-xs leading-tight mr-2"
+            >
+              <span className="text-gray-400 mr-1">→</span>
+              {suggestionLabel}
+            </span>
           </div>
         )}
+
       </div>
   );
 }
