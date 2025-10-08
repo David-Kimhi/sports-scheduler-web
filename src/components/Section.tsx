@@ -73,42 +73,55 @@ export function Section({
   });
 
   return (
-    <div className="pr-8 pl-8 relative">
-      <div className="flex justify-between items-center">
-        <h3 className="ml-6 inline-flex items-center text-gray-900 text-sm font-medium">
-          {title} <FiChevronRight />
-        </h3>
+    <div className="pr- pl-2 relative">
 
-        {/* Chevrons (horizontal scroll) */}
-        {canScroll && (
-          <div className="flex gap-2 z-20">
-            <button
-              onClick={scrollLeft}
-              disabled={atStart}
-              className={`bg-accent shadow shadow-accent rounded-full p-1
-                ${atStart ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
-              title={atStart ? "At start" : "Scroll left"}
-            >
-              <FiChevronLeft size={13} />
-            </button>
-            <button
-              onClick={scrollRight}
-              disabled={atEnd}
-              className={`bg-accent shadow shadow-accent rounded-full p-1
-                ${atEnd ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"}`}
-              title={atEnd ? "At end" : "Scroll right"}
-            >
-              <FiChevronRight size={13} />
-            </button>
-          </div>
-        )}
-      </div>
+      <div className="py-2 overflow-visible z-5">
+        <div className="flex justify-between items-center">
+          <h3 className="ml-6 inline-flex items-center text-gray-900 text-sm font-medium">
+            {title} <FiChevronRight />
+          </h3>
 
-      <div className="py-2 overflow-visible">
+          {/* Chevrons (horizontal scroll) */}
+          {canScroll && (
+            <div className="hidden md:grid w-16 grid-cols-2 gap-2 z-20"> {/* 2×(w-7) + gap-2 = 64px */}
+              {/* Left */}
+              <button
+                onClick={scrollLeft}
+                disabled={atStart}
+                className={[
+                  "bg-accent shadow shadow-accent rounded-full p-1 transition-all duration-300",
+                  "h-7 w-7 flex items-center justify-center",
+                  atStart ? "opacity-40 cursor-not-allowed hidden" : "hover:bg-gray-100",            // hide when disabled
+                  atEnd && !atStart ? "col-span-2 w-full" : ""                      // expand if right is disabled
+                ].join(" ")}
+                title={atStart ? "At start" : "Scroll left"}
+                aria-disabled={atStart}
+              >
+                <FiChevronLeft size={13} />
+              </button>
+              {/* Right */}
+              <button
+                onClick={scrollRight}
+                disabled={atEnd}
+                className={[
+                  "bg-accent shadow shadow-accent rounded-full p-1 transition-all duration-300",
+                  "h-7 w-7 flex items-center justify-center",
+                  atEnd ? "opacity-40 cursor-not-allowed hidden" : "hover:bg-gray-100",
+                  atStart && !atEnd ? "col-span-2 w-full" : ""                      // expand if left is disabled
+                ].join(" ")}
+                title={atEnd ? "At end" : "Scroll right"}
+                aria-disabled={atEnd}
+              >
+                <FiChevronRight size={13} />
+              </button>
+            </div>
+          )}
+
+        </div>
         <div
           ref={containerRef}
           onScroll={measure} // extra safety 
-          className="flex gap-3 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap min-h-[60px]"
+          className="flex gap-3 items-center overflow-x-auto no-scrollbar rounded-2xl pl-3 pr-12 flex-nowrap min-h-[50px] sm:min-h-[60px] z-30"
         >
           {orderedItems.map(item => (
             <Card

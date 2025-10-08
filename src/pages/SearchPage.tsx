@@ -187,7 +187,9 @@ const popLastFilter = useCallback(() => {
       style={{ minHeight: "calc(var(--vh, 1vh) * 100)" }}
     >
       {/* ───────────── Section 1: Filters/Search (mobile-first spacing) ───────────── */}
-      <section className="snap-start flex" style={{ minHeight: "calc(var(--vh, 1vh) * 100)" }}>
+      <section 
+        className="snap-start flex pc-height-games"
+      >
         <div className="w-[92%] sm:w-2/3 mx-auto flex flex-col gap-4 sm:gap-0 pt-4 sm:pt-6">
           <SiteBrand useGradientTitle={false} />
 
@@ -200,6 +202,8 @@ const popLastFilter = useCallback(() => {
             onEnter={handleEnter}  
             suggestionLabel={suggestionLabel}     
             onBackspaceEmpty={popLastFilter}  
+            fabSearchClick={handleFabSearchClick}
+            searchGamesDisabled={searchGamesDisabled}
           />
 
           {sections.map(({ title, type, items }) => (
@@ -213,34 +217,7 @@ const popLastFilter = useCallback(() => {
             />
           ))}
 
-          {/* Sticky CTA on mobile only; static on ≥sm */}
-          <div
-            className={[
-              "mt-auto",
-              "sticky bottom-0 z-20", // mobile sticky
-              "bg-primary/95 backdrop-blur", // slight backdrop so content under doesn’t clash
-              "px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0)+12px)]",
-              "sm:static sm:px-0 sm:pt-0 sm:pb-6", // desktop spacing
-            ].join(" ")}
-          >
-            <div  className={[
-                filters.length > 0 ? "gradient-border" : "",
-                "block w-full sm:w-4/5 mx-auto", 
-              ].join(" ")}
-            >
-              <button
-                className={[
-                  "w-full min-h-12 px-5 py-2 rounded-full text-sm shadow-lg transition-colors",
-                  "text-primary hover:bg-gray-300 bg-primary",
-                  filters.length === 0 && "border-2 border-gray-400 opacity-50 cursor-not-allowed",
-                ].filter(Boolean).join(" ")}
-                onClick={handleFabSearchClick}
-                disabled={searchGamesDisabled}
-              >
-                Search Games
-              </button>
-            </div>
-          </div>
+          
         </div>
       </section>
 

@@ -19,7 +19,7 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
   const logoSrc: string | undefined = logos[logoKey] || logos[pngKey];
 
   // layout constants
-  const baseWidth = 170;                 // fixed width when not hovering
+  const baseWidth = 130;                 // fixed width when not hovering
   const logoPx = 32;                     // w-8 => ~32px 
   const gapPx = 18;                      // gap-3 => ~12px. If gap-4 => 16px
 
@@ -76,7 +76,7 @@ export function Card({ item, onSelect, isSelected = false }: CardProps) {
   return (
     <div
       onClick={() => item.type !== "game" && onSelect(item)}
-      className={`group ${cardBase}${bg} flex-none shrink-0 h-8 items-center`}
+      className={`group ${cardBase}${bg} flex-none shrink-0 h-8 items-center !gap-1`}
       style={{ width: baseWidth }}
       onMouseEnter={(e) => { e.currentTarget.style.width = `${hoverWidth}px`; e.currentTarget.style.height = `50px`}}
       onMouseLeave={(e) => { e.currentTarget.style.width = `${baseWidth}px`; e.currentTarget.style.height = `32px`}}

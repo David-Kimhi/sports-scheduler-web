@@ -128,13 +128,14 @@
   }
 
 
-  /* Inner button inside gradient border */
-  .gradient-border button {
-    position: relative;
-    z-index: 1;
-    border-radius: 9999px;
-    background-color: var(--gray-100);
-    color: var(--gray-700);
+  .pc-height-games {
+    min-height: calc(var(--vh, 1vh) * 80);
+  }
+  
+  @media (max-width: 768px) {
+    .pc-height-games{
+      min-height: 100vh; /* mobile full height */
+    }
   }
 
   /* Use the real visual viewport height (updated by JS below) */

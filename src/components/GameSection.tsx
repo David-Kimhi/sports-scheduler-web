@@ -264,32 +264,32 @@ function GameSection({ items, isSearchingGames }, ref) {
         {/* Row 1: Header / Filters */}
         {hasGames && (
           <div className="pt-3 pb-2 sm:pt-4 sm:pb-2" ref={headerRef}>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              {/* Left cluster */}
-              <div className="flex items-center gap-3">
-                <h3 className="ml-1 sm:ml-6 inline-flex items-center gap-1 text-primary bg-accent px-4 sm:px-8 py-1 rounded-full text-sm font-medium">
-                  Events <FiChevronRight />
-                </h3>
+            
+            <h3 className="inline-flex items-center text-primary pr-4 sm:pr-8 py-1 text-sm font-medium pb-6">
+                Events <FiChevronRight />
+            </h3>
 
+            <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+              {/* left */}
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={selectAll}
-                  className="text-primary underline hover:text-blue-900 text-sm"
-                >
+                  onClick={selectAll} 
+                  className="text-primary rounded-full bg-accent hover:bg-gray-300 px-3 py-1 text-sm">
                   {selectedGames.size === filteredGames.length ? "Unselect All" : "Select All"}
                 </button>
               </div>
 
-              {/* Filters cluster */}
-              <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm self-start sm:self-auto">
+              {/* right */}
+              <div className="flex rounded-full bg-gray-200 px-0.5 py-0.5 text-sm shrink-0 overflow-x-auto whitespace-nowrap">
                 {filterOptions.map((type) => (
                   <button
                     key={type}
                     onClick={() => setTeamFilter(type)}
                     className={`px-3 py-1 rounded-full transition-colors ${
-                      teamFilter === type ? "bg-accent text-primary" : "text-[#80715f] hover:bg-gray-300"
-                    } ${!hasTeamFilter ? "opacity-50 cursor-not-allowed" : ""}`}
+                      teamFilter === type ? "bg-accent text-primary" : "hover:bg-gray-300"
+                    } ${!hasTeamFilter ? "opacity-20 cursor-not-allowed" : ""}`}
                   >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type[0].toUpperCase() + type.slice(1)}
                   </button>
                 ))}
               </div>
@@ -300,7 +300,7 @@ function GameSection({ items, isSearchingGames }, ref) {
         {/* Row 2: Cards (add bottom padding for the fixed action bar on mobile) */}
         <div className="relative overflow-hidden min-h-0">
           <div
-            className="h-full overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 pr-1
+            className="h-full overflow-y-auto grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-10 pr-1
                       pb-[88px] sm:pb-0" // <- space for fixed bar on mobile
             style={{
               WebkitMaskImage:
@@ -310,7 +310,6 @@ function GameSection({ items, isSearchingGames }, ref) {
               scrollbarWidth: "none",
             }}
           >
-            <div className="col-span-full h-2 sm:h-4" />
               {isSearchingGames ? (
                 <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg flex justify-center items-center gap-3">
                   <svg className="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24">
