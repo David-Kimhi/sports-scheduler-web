@@ -10,6 +10,8 @@ import { GameSection, type GameSectionHandle } from "../components/GameSection";
 import SiteBrand from "../components/SiteBrand";
 import { SearchBar } from "../components/SearchBar";
 import { buildParams, mapSearchResults, pinSelected , type SearchApiResponse} from "../utils/search.utils";
+import { getLocationProfile } from "../utils/geoLoc.utils";
+import { logSearchEvent, type SearchLogPayload } from "../interfaces/analytics.interface";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -81,6 +83,42 @@ export default function SearchPage() {
     };
   }, []);
 
+const postSearchEvent = useCallback(async (args: {
+    query: string;
+    stage: "submit" | "typeahead"
+    filters: Entity[];
+    numOfRecords: number;
+    elapsedMS: number;
+  }) => {
+    // Fire-and-forget analytics — do NOT block the UI
+      try {
+        // Optional: try to enrich with client geolocation
+        let clientLoc: SearchLogPayload["clientLoc"] | undefined;
+        try {
+          const profile = await getLocationProfile("en");     // from earlier helper
+          clientLoc = {
+            city: profile.city,
+            country: profile.country,
+            countryCode: profile.countryCode,
+            region: profile.region,
+            postcode: profile.postcode,
+            geo: { type: "Point", coordinates: [profile.point.lng, profile.point.lat] }
+          };
+        } catch (err) {console.error("postSearchEvent error:", err) }
+  
+        // Send compact payload; server will add IP/UA reliably
+        await logSearchEvent(API_BASE, {
+          query: args.query,
+          filters: filters.map(f => ({ type: f.type, id: String(f.id), label: f.name  })),
+          stage: args.stage,
+          numOfRecords: args.numOfRecords,
+          elapsedMS: args.elapsedMS,
+          clientLoc,
+        });
+      } catch (err) {console.error("postSearchEvent error:", err) }
+
+  }, [])
+
   const fetchResults = useCallback((opts?: {
     games?: boolean;
     ignoreFilters?: boolean;
@@ -89,26 +127,32 @@ export default function SearchPage() {
   }) => {
     const effectiveFilters = opts?.ignoreFilters ? [] : (opts?.useFilters ?? filters);
     const q = opts?.useQuery ?? query;
-
-    const teamIds = effectiveFilters.filter((f) => f.type === "team").map((f) => String(f.id));
+  
     const params = buildParams({ query: q, filters: effectiveFilters, games: opts?.games });
 
+    const t0 = performance.now();
+
+    // Kick off the search (your current flow)
     fetch(`${API_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`)
       .then((res) => res.json())
       .then((raw: SearchApiResponse) => {
-        const resultData = mapSearchResults(raw, { games: opts?.games, selectedTeamIds: teamIds });
-
-        if (!opts?.games) {
-          for (const f of effectiveFilters) {
-            const list = resultData[f.type];
-            if (!list.find((i) => i.id === f.id)) list.unshift(f);
-          }
-        }
-
+        const resultData = mapSearchResults(raw, { games: opts?.games, selectedTeamIds: effectiveFilters.filter(f=>f.type==='team').map(f=>String(f.id)) });
         setData((prev) => ({ ...resultData, game: opts?.games ? resultData.game : prev.game }));
-        if (opts?.games) setIsSearchingGames(false);
+        if (opts?.games) {
+          setIsSearchingGames(false);
+          const resultsCount = (resultData.game ?? []).length;
+          const elapsedMs = Math.round(performance.now() - t0);
+          postSearchEvent({
+            query: query
+            , stage: "submit"
+            , filters: effectiveFilters
+            , numOfRecords: resultsCount
+            , elapsedMS: elapsedMs
+          });
+        }
       })
       .catch((err) => console.error("Fetch error:", err));
+  
   }, [filters, query]);
 
   useEffect(() => { fetchResults(); }, [fetchResults]);
@@ -136,11 +180,13 @@ export default function SearchPage() {
     fetchResults({ games: true, useFilters: filters, useQuery: "" });
   }, [filters, fetchResults]);
 
-  const handleFabSearchClick = useCallback(() => {
+  const handleFabSearchClick = useCallback( () => {
     searchGames();
     requestAnimationFrame(() => {
       gameSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+
+    
   }, [searchGames]);
 
   // when Enter selects a bestMatch, remember it so Backspace can undo
