@@ -1,17 +1,30 @@
 {
-  debug
+  # debug   # (turn off in prod)
 }
 
 {$DOMAIN} {
   encode gzip zstd
 
-  # 1) API goes to backend, keep /api/*
-  @api path /api/*
+  # --- API routes to backend ---
+  @api       path /api/*
+  @football  path /football/*
+  @analytics path /analytics/*
+  @health    path /health /api/health
+
   handle @api {
     reverse_proxy api:3000
   }
+  handle @football {
+    reverse_proxy api:3000
+  }
+  handle @analytics {
+    reverse_proxy api:3000
+  }
+  handle @health {
+    reverse_proxy api:3000
+  }
 
-  # 2) Everything else = SPA
+  # --- Everything else is the SPA ---
   handle {
     root * /usr/share/caddy
     try_files {path} /index.html

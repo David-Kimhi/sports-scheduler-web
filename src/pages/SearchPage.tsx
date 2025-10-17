@@ -109,7 +109,7 @@ const postSearchEvent = useCallback(async (args: {
         // Send compact payload; server will add IP/UA reliably
         await logSearchEvent(API_BASE, {
           query: args.query,
-          filters: filters.map(f => ({ type: f.type, id: String(f.id), label: f.name  })),
+          filters: args.filters.map(f => ({ type: f.type, id: String(f.id), label: f.name  })),
           stage: args.stage,
           numOfRecords: args.numOfRecords,
           elapsedMS: args.elapsedMS,
