@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { FiDownload, FiX } from "react-icons/fi";
 
 // --- Types ---
@@ -193,7 +193,7 @@ export function ExportModal({ open, onClose, events, calendarName = "Events", on
           >
             {/* Simple Google "G" (text), replace with SVG if you have assets */}
             <span className="font-bold text-base">G</span>
-            <span className="font-medium">Add to Google Calendar</span>
+              <span className="font-medium">Google Calendar — Coming soon</span>
           </button>
         </div>
 

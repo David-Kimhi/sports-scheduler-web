@@ -3,7 +3,7 @@
 // 
 // A designed search bar
 // ──────────────────────────────────────────────────────────────────────────────
-import { FiArrowRight, FiFilter, FiSearch } from "react-icons/fi";
+import { FiArrowRight, FiFilter } from "react-icons/fi";
 import type { Entity } from "../interfaces/api.interface";
 import { Pill } from "./Pill";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -115,7 +115,7 @@ export function SearchBar({
             onBackspaceEmpty?.();
           }
         }}
-        placeholder={filters.length > 0 || query || isFocused ? "" : "Search countries, leagues, teams…"}
+          placeholder={filters.length > 0 || query || isFocused ? "" : "Find a team or league…"}
         aria-autocomplete="both"
         autoComplete="off"
       />
@@ -162,7 +162,7 @@ export function SearchBar({
             sm:group-hover:max-w-[140px] sm:group-hover:opacity-100
           "
         >
-          Search Games
+            Show Schedule
         </span>
       </button>
 

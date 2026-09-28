@@ -8,6 +8,7 @@ export function GameCard({
   onToggle,
   leagueName,
   round,
+  selectable = true,
 }: {
   homeTeam: { name: string; logoId: string };
   awayTeam: { name: string; logoId: string };
@@ -16,6 +17,7 @@ export function GameCard({
   onToggle: () => void;
   leagueName?: string;
   round?: string;
+  selectable?: boolean;
 }) {
 
   const date = new Date(dateUTC);
@@ -65,12 +67,14 @@ export function GameCard({
       )}
 
       {/* Top-left checkbox */}
-      <input
-        type="checkbox"
-        className="absolute top-3 left-3 w-5 h-5 accent-2 bg-accent-2 rounded cursor-pointer z-10"
-        checked={isSelected}
-        onChange={onToggle}
-      />
+      {selectable && (
+        <input
+          type="checkbox"
+          className="absolute top-3 left-3 w-5 h-5 accent-2 bg-accent-2 rounded cursor-pointer z-10"
+          checked={isSelected}
+          onChange={onToggle}
+        />
+      )}
 
       {/* Top: League and Date */}
       <div className="text-sm text-gray-600 mb-2 text-center">

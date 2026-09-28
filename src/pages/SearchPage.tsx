@@ -9,14 +9,54 @@ import { Section } from "../components/Section";
 import { GameSection, type GameSectionHandle } from "../components/GameSection";
 import SiteBrand from "../components/SiteBrand";
 import { SearchBar } from "../components/SearchBar";
-import { buildParams, mapSearchResults, pinSelected , type SearchApiResponse} from "../utils/search.utils";
+import { UpcomingGames } from "../components/UpcomingGames";
+import { buildParams, dedupeById, mapSearchResults, pinSelected, type SearchApiResponse } from "../utils/search.utils";
 import { getLocationProfile } from "../utils/geoLoc.utils";
 import { logSearchEvent, type SearchLogPayload } from "../interfaces/analytics.interface";
+
+const POPULAR_LOOKUPS = [
+  { query: "Premier League", preferredTypes: ["league", "team"] as const },
+  { query: "Champions League", preferredTypes: ["league", "team"] as const },
+  { query: "Barcelona", preferredTypes: ["team", "league"] as const },
+  { query: "Real Madrid", preferredTypes: ["team", "league"] as const },
+  { query: "Arsenal", preferredTypes: ["team", "league"] as const },
+];
+
+type SearchRequestOptions = {
+  games?: boolean;
+  ignoreFilters?: boolean;
+  filters?: Entity[];
+  query?: string;
+  trackSubmit?: boolean;
+};
+
+function findMatchingEntity(data: EntityData, query: string, preferredTypes: Array<Entity["type"]>) {
+  const normalized = query.trim().toLowerCase();
+  for (const type of preferredTypes) {
+    const found = data[type]?.find((item) => {
+      const name = item.name.toLowerCase();
+      return name === normalized || name.includes(normalized);
+    });
+    if (found) return found;
+  }
+  return null;
+}
+
+function collectPopularEntities(data: EntityData) {
+  const picked = POPULAR_LOOKUPS.map(({ query, preferredTypes }) =>
+    findMatchingEntity(data, query, [...preferredTypes])
+  ).filter((entity): entity is Entity => Boolean(entity));
+
+  return dedupeById(picked).slice(0, 5);
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Entity[]>([]);
   const [isSearchingGames, setIsSearchingGames] = useState(false);
+  const [hasSubmittedScheduleSearch, setHasSubmittedScheduleSearch] = useState(false);
+  const [popularEntities, setPopularEntities] = useState<Entity[]>([]);
+  const [discoveryGames, setDiscoveryGames] = useState<Entity[]>([]);
   const [data, setData] = useState<EntityData>({ country: [], league: [], team: [], game: [] });
 
   const gameSectionRef = useRef<HTMLDivElement>(null);
@@ -83,7 +123,7 @@ export default function SearchPage() {
     };
   }, []);
 
-const postSearchEvent = useCallback(async (args: {
+  const postSearchEvent = useCallback(async (args: {
     query: string;
     stage: "submit" | "typeahead"
     filters: Entity[];
@@ -117,51 +157,114 @@ const postSearchEvent = useCallback(async (args: {
         });
       } catch (err) {console.error("postSearchEvent error:", err) }
 
-  }, [])
+    }, [filters])
 
-  const fetchResults = useCallback((opts?: {
-    games?: boolean;
-    ignoreFilters?: boolean;
-    useFilters?: Entity[];
-    useQuery?: string;
-  }) => {
-    const effectiveFilters = opts?.ignoreFilters ? [] : (opts?.useFilters ?? filters);
-    const q = opts?.useQuery ?? query;
-  
-    const params = buildParams({ query: q, filters: effectiveFilters, games: opts?.games });
+  const requestSearchResults = useCallback(async (opts?: SearchRequestOptions) => {
+    const effectiveFilters = opts?.ignoreFilters ? [] : (opts?.filters ?? []);
+    const searchQuery = opts?.query ?? "";
 
-    const t0 = performance.now();
+    const params = buildParams({ query: searchQuery, filters: effectiveFilters, games: opts?.games });
+    const startedAt = performance.now();
 
-    // Kick off the search (your current flow)
-    fetch(`${API_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`)
-      .then((res) => res.json())
-      .then((raw: SearchApiResponse) => {
-        const resultData = mapSearchResults(raw, { games: opts?.games, selectedTeamIds: effectiveFilters.filter(f=>f.type==='team').map(f=>String(f.id)) });
-        setData((prev) => ({ ...resultData, game: opts?.games ? resultData.game : prev.game }));
-        if (opts?.games) {
-          setIsSearchingGames(false);
+    const response = await fetch(`${API_BASE}${FOOTBALL_ENDPOINT}/search?${params.toString()}`);
+    const raw: SearchApiResponse = await response.json();
+    const resultData = mapSearchResults(raw, {
+      games: opts?.games,
+      selectedTeamIds: effectiveFilters.filter((filter) => filter.type === "team").map((filter) => String(filter.id)),
+    });
+
+    return {
+      resultData,
+      effectiveFilters,
+      searchQuery,
+      elapsedMS: Math.round(performance.now() - startedAt),
+    };
+  }, []);
+
+  const fetchResults = useCallback(async (opts?: SearchRequestOptions) => {
+    const queryToUse = opts?.query ?? query;
+    const filtersToUse = opts?.filters ?? filters;
+
+    try {
+      const { resultData, effectiveFilters, searchQuery, elapsedMS } = await requestSearchResults({
+        ...opts,
+        query: queryToUse,
+        filters: filtersToUse,
+      });
+
+      setData((prev) => ({ ...resultData, game: opts?.games ? resultData.game : prev.game }));
+
+      if (opts?.games) {
+        setIsSearchingGames(false);
+        if (opts?.trackSubmit) {
           const resultsCount = (resultData.game ?? []).length;
-          const elapsedMs = Math.round(performance.now() - t0);
           postSearchEvent({
-            query: query
-            , stage: "submit"
-            , filters: effectiveFilters
-            , numOfRecords: resultsCount
-            , elapsedMS: elapsedMs
+            query: searchQuery,
+            stage: "submit",
+            filters: effectiveFilters,
+            numOfRecords: resultsCount,
+            elapsedMS,
           });
         }
-      })
-      .catch((err) => console.error("Fetch error:", err));
-  
-  }, [filters, query]);
+      }
 
-  useEffect(() => { fetchResults(); }, [fetchResults]);
-  useEffect(() => { fetchResults({ games: false }); }, [query, fetchResults]);
+      return resultData;
+    } catch (err) {
+      console.error("Fetch error:", err);
+      if (opts?.games) setIsSearchingGames(false);
+      return null;
+    }
+  }, [filters, postSearchEvent, query, requestSearchResults]);
+
+  useEffect(() => { void fetchResults(); }, [fetchResults]);
+  useEffect(() => { void fetchResults({ games: false }); }, [query, fetchResults]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDiscovery = async () => {
+      try {
+        const response = await requestSearchResults({ query: "", filters: [], ignoreFilters: true });
+        if (cancelled) return;
+
+        setDiscoveryGames(response.resultData.game ?? []);
+
+        const initialPopular = collectPopularEntities(response.resultData);
+        if (initialPopular.length >= 5) {
+          setPopularEntities(initialPopular);
+          return;
+        }
+
+        const missingLookups = POPULAR_LOOKUPS.filter(
+          ({ query: lookupQuery }) => !initialPopular.some((entity) => entity.name.toLowerCase() === lookupQuery.toLowerCase())
+        );
+
+        const resolved = await Promise.all(
+          missingLookups.map(async ({ query: lookupQuery, preferredTypes }) => {
+            const lookup = await requestSearchResults({ query: lookupQuery, filters: [] });
+            return findMatchingEntity(lookup.resultData, lookupQuery, [...preferredTypes]);
+          })
+        );
+
+        if (!cancelled) {
+          setPopularEntities(dedupeById([...initialPopular, ...resolved.filter((entity): entity is Entity => Boolean(entity))]).slice(0, 5));
+        }
+      } catch (err) {
+        console.error("Discovery load error:", err);
+      }
+    };
+
+    void loadDiscovery();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestSearchResults]);
 
   const removePill = useCallback((item: Entity) => {
     const next = filters.filter((f) => f.id !== item.id || f.type !== item.type);
     setFilters(next);
-    fetchResults({ useFilters: next, useQuery: query });
+    void fetchResults({ filters: next, query });
   }, [filters, query, fetchResults]);
 
   const toggleFilters = useCallback((item: Entity) => {
@@ -169,7 +272,7 @@ const postSearchEvent = useCallback(async (args: {
       const exists = prev.some((f) => f.id === item.id && f.type === item.type);
       const next = exists ? prev.filter((f) => !(f.id === item.id && f.type === item.type)) : [...prev, item];
       setQuery("");
-      fetchResults({ useFilters: next, useQuery: "" });
+      void fetchResults({ filters: next, query: "" });
       return next;
     });
   }, [fetchResults]);
@@ -177,7 +280,8 @@ const postSearchEvent = useCallback(async (args: {
   const searchGames = useCallback(() => {
     setData((prev) => ({ ...prev, game: [] }));
     setIsSearchingGames(true);
-    fetchResults({ games: true, useFilters: filters, useQuery: "" });
+    setHasSubmittedScheduleSearch(true);
+    void fetchResults({ games: true, filters, query: "", trackSubmit: true });
   }, [filters, fetchResults]);
 
   const handleFabSearchClick = useCallback( () => {
@@ -196,7 +300,7 @@ const handleEnter = useCallback(() => {
     lastEnterAddedRef.current = { id: bestMatch.id, type: bestMatch.type };
     setQuery(""); // clear after accept (common autocomplete behaviour)
   } else if (!searchGamesDisabled) {handleFabSearchClick()}
-}, [bestMatch, toggleFilters, setQuery]);
+}, [bestMatch, handleFabSearchClick, searchGamesDisabled, toggleFilters]);
 
 // remove last or the “enter-added” one
 const popLastFilter = useCallback(() => {
@@ -214,7 +318,7 @@ const popLastFilter = useCallback(() => {
 
     const next = prev.filter((_, i) => i !== idx);
     // keep data in sync
-    fetchResults({ useFilters: next, useQuery: query });
+    void fetchResults({ filters: next, query });
     return next;
   });
 }, [fetchResults, query]);
@@ -224,6 +328,8 @@ const popLastFilter = useCallback(() => {
     { title: "Leagues",  type: "league"  as const, items: pinSelected("league",  filters, data.league)  },
     { title: "Teams",    type: "team"    as const, items: pinSelected("team",    filters, data.team)    },
   ];
+
+  const showPopular = query.trim().length === 0 && filters.length === 0 && popularEntities.length > 0;
 
   return (
     <div
@@ -252,6 +358,16 @@ const popLastFilter = useCallback(() => {
             searchGamesDisabled={searchGamesDisabled}
           />
 
+            {showPopular && (
+              <Section
+                title="Popular"
+                items={popularEntities}
+                onSelect={toggleFilters}
+                selected={filters}
+                activeFilters={filters}
+              />
+            )}
+
           {sections.map(({ title, type, items }) => (
             <Section
               key={type}
@@ -274,8 +390,18 @@ const popLastFilter = useCallback(() => {
         className="snap-start snap-always"
         style={{ minHeight: "calc(var(--vh, 1vh) * 100)" }}
       >
-        <div className="w-[92%] sm:w-2/3 mx-auto">
-          <GameSection ref={gameSectionApiRef} items={data.game} isSearchingGames={isSearchingGames} />
+          <div className="w-[92%] sm:w-2/3 mx-auto">
+            {!hasSubmittedScheduleSearch ? (
+              <UpcomingGames items={discoveryGames} />
+            ) : (
+              <GameSection
+                ref={gameSectionApiRef}
+                items={data.game}
+                isSearchingGames={isSearchingGames}
+                title="Your Schedule"
+                emptyStateMessage="No upcoming games found for this selection."
+              />
+            )}
         </div>
       </section>
     </div>

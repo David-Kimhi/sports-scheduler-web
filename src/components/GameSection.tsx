@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useEffect} from "react";
+import { forwardRef, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useEffect, useCallback } from "react";
 
 import { ConfirmDialog } from "./ConfirmationDialog";
 import { GameCard } from "./GameCard";
@@ -40,8 +40,10 @@ export type GameSectionHandle = {
 export const GameSection = forwardRef<GameSectionHandle, {
   items: Entity[];
   isSearchingGames: boolean;
+  title?: string;
+  emptyStateMessage?: string;
 }>(
-function GameSection({ items, isSearchingGames }, ref) {
+function GameSection({ items, isSearchingGames, title = "Your Schedule", emptyStateMessage = "No upcoming games found for this selection." }, ref) {
   const filterOptions = ["home", "away", "both"] as const;
   type FilterType = typeof filterOptions[number];
 
@@ -83,8 +85,10 @@ function GameSection({ items, isSearchingGames }, ref) {
   }));
 
   // Helpers
-  const hasSelected = (id: string | number) =>
-    selectedGames.has(String(id)) || selectedGames.has(Number(id));
+  const hasSelected = useCallback(
+    (id: string | number) => selectedGames.has(String(id)) || selectedGames.has(Number(id)),
+    [selectedGames]
+  );
 
   const selectedTeamIds = items[0]?.selectedTeamIds ?? [];
   const hasTeamFilter = selectedTeamIds.length > 0;
@@ -110,7 +114,7 @@ function GameSection({ items, isSearchingGames }, ref) {
       ? filteredGames.filter((g) => hasSelected(g.id))
       : filteredGames;
     return toCalendarEvents(base);
-  }, [selectedGames, filteredGames]);
+  }, [filteredGames, hasSelected, selectedGames]);
 
   // Effective events for export: prefer watchlist if not empty, else current selection
   const effectiveExportEvents = watchlist.length > 0 ? watchlist : currentSelectionEvents;
@@ -149,7 +153,7 @@ function GameSection({ items, isSearchingGames }, ref) {
   const resultsSig = useMemo(() => {
       const ids = filteredGames.map(g => String(g.id)).sort();
       return ids.join("|");
-    }, [filteredGames.map(g => g.id).sort().join("|")]);
+    }, [filteredGames]);
     
 
   // reset on new search
@@ -266,7 +270,7 @@ function GameSection({ items, isSearchingGames }, ref) {
           <div className="pt-3 pb-2 sm:pt-4 sm:pb-2" ref={headerRef}>
             
             <h3 className="inline-flex items-center text-primary pr-4 sm:pr-8 py-1 text-sm font-medium pb-6">
-                Events <FiChevronRight />
+                {title} <FiChevronRight />
             </h3>
 
             <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
@@ -320,7 +324,7 @@ function GameSection({ items, isSearchingGames }, ref) {
                 </div>
               ) : upcomingGames.length === 0 ? (
                 <div className="col-span-full w-full py-10 text-center text-gray-500 text-lg">
-                  No games found. Try using the search or filters to discover games.
+                  {emptyStateMessage}
                 </div>
               ) : (
                 filteredGames.map((game) => (

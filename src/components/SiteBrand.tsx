@@ -9,7 +9,7 @@ type Props = {
 
 export default function SiteBrand({
   title = "Sport Scheduler",
-  tagline = "Search • Pick • Add to Calendar",
+  tagline = "Pick the teams and leagues you follow, see their upcoming matches, and add them to your calendar.",
   logoSrc = "/logo.png",
   useGradientTitle = true,
 }: Props) {
@@ -50,7 +50,7 @@ export default function SiteBrand({
 
           {tagline && (
             <p
-              className="mt-2 text-[clamp(12px,2.3vw,16px)] max-w-[60ch] mb-6"
+                className="mt-2 text-[clamp(12px,2.3vw,16px)] max-w-[58ch] mb-4 leading-snug"
               style={{
                 color: "color-mix(in srgb, var(--text-primary) 70%, transparent)",
               }}
