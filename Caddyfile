@@ -9,21 +9,37 @@
   encode gzip zstd
 
   # --- API routes to backend ---
-  @api       path /api/*
-  @football  path /football/*
-  @analytics path /analytics/*
-  @health    path /health /api/health
-
-  handle @api {
-    reverse_proxy api:3000
-  }
-  handle @football {
-    reverse_proxy api:3000
-  }
-  handle @analytics {
-    reverse_proxy api:3000
-  }
+  @health path /health /api/health
   handle @health {
+    rewrite * /health
+    reverse_proxy api:3000
+  }
+
+  # API_BASE may be empty (legacy paths) or /api (configured deployments).
+  handle_path /api/* {
+    @football path /football/*
+    handle @football {
+      rewrite * /v1{uri}
+      reverse_proxy api:3000
+    }
+
+    @analytics path /analytics/*
+    handle @analytics {
+      rewrite * /v1{uri}
+      reverse_proxy api:3000
+    }
+
+    handle {
+      reverse_proxy api:3000
+    }
+  }
+
+  handle /football/* {
+    rewrite * /v1{uri}
+    reverse_proxy api:3000
+  }
+  handle /analytics/* {
+    rewrite * /v1{uri}
     reverse_proxy api:3000
   }
 
