@@ -7,12 +7,16 @@ import type { Entity } from "../interfaces/api.interface";
 import type { EntityData } from "../interfaces/entityTypes.interface";
 import type { GameApi, LeagueApi, CountryApi, TeamApi } from "../interfaces/api.interface";
 
-export type SearchApiResponse = {
+type SearchApiData = {
     fixtures?: GameApi[];
     countries?: CountryApi[];
     leagues?: LeagueApi[];
     teams?: TeamApi[];
-  };
+};
+
+export type SearchApiResponse = SearchApiData & {
+  data?: SearchApiData;
+};
 
 export const dedupeById = <T extends Entity>(arr: T[]) => {
   const seen = new Set<string>();
@@ -57,8 +61,12 @@ export function mapSearchResults(
   data: SearchApiResponse,
   { games, selectedTeamIds }: { games?: boolean; selectedTeamIds: string[] }
 ): EntityData {
+  // The API now wraps successful responses as { data: results }. Keep support
+  // for older deployments that returned the result fields at the top level.
+  const results = data.data ?? data;
+
   if (games) {
-    const fixtures: GameApi[] = data.fixtures ?? [];
+    const fixtures: GameApi[] = results.fixtures ?? [];
     return {
       country: [],
       league: [],
@@ -81,9 +89,9 @@ export function mapSearchResults(
     } satisfies EntityData;
   }
 
-  const countries: CountryApi[] = data.countries ?? [];
-  const leagues: LeagueApi[] = data.leagues ?? [];
-  const teams: TeamApi[] = data.teams ?? [];
+  const countries: CountryApi[] = results.countries ?? [];
+  const leagues: LeagueApi[] = results.leagues ?? [];
+  const teams: TeamApi[] = results.teams ?? [];
 
   return {
     country: countries.map((c) => ({ id: c.code, name: c.name, type: "country" as const })),
