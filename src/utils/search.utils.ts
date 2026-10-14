@@ -43,7 +43,7 @@ export function buildParams({
   games?: boolean;
 }) {
   const params = new URLSearchParams();
-  if (query && !games) params.append("word", query);
+  if (query) params.append("word", query);
 
   for (const f of filters) {
     if (f.id != null) params.append(f.type, String(f.id));

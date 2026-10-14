@@ -19,6 +19,7 @@ type SearchBarProps = {
   onBackspaceEmpty?: () => void;
   fabSearchClick?: () => void;  
   searchGamesDisabled?: boolean;      
+  onFocusInput?: () => void;
 };
 
 export function SearchBar({
@@ -31,7 +32,8 @@ export function SearchBar({
   suggestionLabel = "",
   onBackspaceEmpty,
   fabSearchClick,
-  searchGamesDisabled
+  searchGamesDisabled,
+  onFocusInput,
 }: SearchBarProps) {
 
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -104,7 +106,10 @@ export function SearchBar({
         className="relative z-10 w-full bg-transparent outline-none"
         style={{ paddingLeft: leftPad, paddingRight: rightPad }}
         value={query}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          setIsFocused(true);
+          onFocusInput?.();
+        }}
         onBlur={() => setIsFocused(false)}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
@@ -147,7 +152,7 @@ export function SearchBar({
           "bg-gray-900 text-white",
           "px-3 transition-[background,padding] duration-300",
           "disabled:bg-gray-900 disabled:cursor-not-allowed",
-          filters.length > 0 || query || isFocused ? "disabled:opacity-20" : "opacity-0 sm:disabled:opacity-20"
+          searchGamesDisabled ? "opacity-40" : "opacity-100"
         ].join(" ")}
       >
         {/* icon (fades out on hover) */}
